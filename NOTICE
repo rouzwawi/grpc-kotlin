@@ -1,0 +1,3 @@
+File grpc-kotlin-gen/src/main/java/io/rouz/grpc/kotlin/GrpcKotlinGenerator.java
+Modified redistribution of ReactiveGrpcGenerator.java from https://github.com/salesforce/reactive-grpc
+Licensed under the BSD 3-Clause license

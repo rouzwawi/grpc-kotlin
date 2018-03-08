@@ -1,0 +1,20 @@
+syntax = "proto3";
+package io.rouz.greeter;
+
+option java_package = "io.rouz.greeter";
+option java_multiple_files = true;
+
+message GreetRequest {
+    string greeting = 1;
+}
+
+message GreetReply {
+    string reply = 1;
+}
+
+service Greeter {
+    rpc Greet (GreetRequest) returns (GreetReply);
+    rpc GreetServerStream (GreetRequest) returns (stream GreetReply);
+    rpc GreetClientStream (stream GreetRequest) returns (GreetReply);
+    rpc GreetBidirectional (stream GreetRequest) returns (stream GreetReply);
+}
