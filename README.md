@@ -1,7 +1,7 @@
 # gRPC Kotlin - Coroutine based gRPC for Kotlin
 
 ![CircleCI](https://img.shields.io/circleci/project/github/rouzwawi/grpc-kotlin.svg)
-![Maven Central](https://img.shields.io/maven-central/v/io.rouz/grpc-kotlin.svg)
+![Maven Central](https://img.shields.io/maven-central/v/io.rouz/grpc-kotlin-gen.svg)
 
 gRPC Kotlin is a [protoc] plugin for generating native Kotlin bindings using [coroutine primitives] for [gRPC] services.
 
