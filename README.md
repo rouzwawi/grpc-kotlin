@@ -1,5 +1,8 @@
 # gRPC Kotlin - Coroutine based gRPC for Kotlin
 
+![CircleCI](https://img.shields.io/circleci/project/github/rouzwawi/grpc-kotlin.svg)
+![Maven Central](https://img.shields.io/maven-central/v/io.rouz/grpc-kotlin.svg)
+
 gRPC Kotlin is a [protoc] plugin for generating native Kotlin bindings using [coroutine primitives] for [gRPC] services.
 
 > This project is an early prototype and has not been tested in production. But don't hesitate to try it out and open up issues in the project if you run into any problems. PR's are welcome!
@@ -58,7 +61,7 @@ Add the `grpc-kotlin-gen` plugin to your `protobuf-maven-plugin` configuration (
         <id>GrpcKotlinGenerator</id>
         <groupId>io.rouz</groupId>
         <artifactId>grpc-kotlin-gen</artifactId>
-        <version>${grpc-kotlin.version}</version>
+        <version>0.0.1</version>
         <mainClass>io.rouz.grpc.kotlin.GrpcKotlinGenerator</mainClass>
     </protocPlugin>
 </protocPlugins>
@@ -79,7 +82,7 @@ protobuf {
             artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
         }
         grpckotlin {
-            artifact = "io.rouz:grpc-kotlin-gen:${grpcKotlinVersion}"
+            artifact = "io.rouz:grpc-kotlin-gen:0.0.1"
         }
     }
     generateProtoTasks {
