@@ -24,6 +24,8 @@ about.
 
 ## Quick start
 
+note: This verified with `gRPC >= 1.10.0`, `protobuf >= 3.5.0` and `kotlin >= 1.2.0`.
+
 Add a gRPC service definition to your project
 
 `greeter.proto`
