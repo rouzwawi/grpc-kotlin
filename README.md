@@ -63,7 +63,7 @@ Add the `grpc-kotlin-gen` plugin to your `protobuf-maven-plugin` configuration (
         <id>GrpcKotlinGenerator</id>
         <groupId>io.rouz</groupId>
         <artifactId>grpc-kotlin-gen</artifactId>
-        <version>0.0.1</version>
+        <version>0.0.2</version>
         <mainClass>io.rouz.grpc.kotlin.GrpcKotlinGenerator</mainClass>
     </protocPlugin>
 </protocPlugins>
