@@ -74,6 +74,9 @@ Add the `grpc-kotlin-gen` plugin to your `protobuf-maven-plugin` configuration (
 Add the `grpc-kotlin-gen` plugin to the plugins section of `protobuf-gradle-plugin`
 
 ```gradle
+def protobufVersion = '3.5.1-1'
+def grpcVersion = '1.13.1'
+
 protobuf {
     protoc {
         // The artifact spec for the Protobuf Compiler
@@ -84,11 +87,11 @@ protobuf {
             artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
         }
         grpckotlin {
-            artifact = "io.rouz:grpc-kotlin-gen:0.0.1"
+            artifact = "io.rouz:grpc-kotlin-gen:0.0.2:jdk8@jar"
         }
     }
     generateProtoTasks {
-        ofSourceSet("main")*.plugins {
+        all()*.plugins {
             grpc {}
             grpckotlin {}
         }
