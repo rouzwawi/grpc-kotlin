@@ -23,4 +23,27 @@
 
     <!-- scope : test -->
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>1.5.8.RELEASE</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <mainClass>io.rouz.grpc.kotlin.GrpcKotlinGenerator</mainClass>
+          <layout>JAR</layout>
+          <classifier>jdk8</classifier>
+          <executable>true</executable>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
