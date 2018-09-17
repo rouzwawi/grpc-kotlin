@@ -17,7 +17,7 @@ import kotlinx.coroutines.experimental.Deferred
 import kotlinx.coroutines.experimental.channels.LinkedListChannel
 import kotlinx.coroutines.experimental.channels.ReceiveChannel
 import kotlinx.coroutines.experimental.channels.SendChannel
-import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.experimental.runBlocking
 
 {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
 @javax.annotation.Generated(
@@ -103,27 +103,19 @@ object {{className}} {
 
   private fun <E> connectChannelToObserver(channel: ReceiveChannel<E>, observer: StreamObserver<E>) {
     // todo: specify coroutine context
-    launch {
-      try {
-        for (value in channel) {
-          observer.onNext(value)
-        }
-        observer.onCompleted()
-      } catch (t: Throwable) {
-        observer.onError(t)
+    runBlocking {
+      for (value in channel) {
+        observer.onNext(value)
       }
+      observer.onCompleted()
     }
   }
 
   private fun <E> connectDeferredToObserver(deferred: Deferred<E>, observer: StreamObserver<E>) {
     // todo: specify coroutine context
-    launch {
-      try {
-        observer.onNext(deferred.await())
-        observer.onCompleted()
-      } catch (t: Throwable) {
-        observer.onError(t)
-      }
+    runBlocking {
+      observer.onNext(deferred.await())
+      observer.onCompleted()
     }
   }
 
