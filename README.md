@@ -5,8 +5,6 @@
 
 gRPC Kotlin is a [protoc] plugin for generating native Kotlin bindings using [coroutine primitives] for [gRPC] services.
 
-> This project is an early prototype and has not been tested in production. But don't hesitate to try it out and open up issues in the project if you run into any problems. PR's are welcome!
-
 ## Why?
 
 The asynchronous nature of bidirectional streaming rpc calls in gRPC makes them a bit hard to implement
@@ -24,7 +22,7 @@ about.
 
 ## Quick start
 
-note: This verified with `gRPC >= 1.10.0`, `protobuf >= 3.5.0` and `kotlin >= 1.2.0`.
+note: This has been tested with `gRPC 1.15.1`, `protobuf 3.5.1` and `kotlin 1.2.71`.
 
 Add a gRPC service definition to your project
 
@@ -63,7 +61,7 @@ Add the `grpc-kotlin-gen` plugin to your `protobuf-maven-plugin` configuration (
         <id>GrpcKotlinGenerator</id>
         <groupId>io.rouz</groupId>
         <artifactId>grpc-kotlin-gen</artifactId>
-        <version>0.0.2</version>
+        <version>0.0.3</version>
         <mainClass>io.rouz.grpc.kotlin.GrpcKotlinGenerator</mainClass>
     </protocPlugin>
 </protocPlugins>
@@ -75,7 +73,7 @@ Add the `grpc-kotlin-gen` plugin to the plugins section of `protobuf-gradle-plug
 
 ```gradle
 def protobufVersion = '3.5.1-1'
-def grpcVersion = '1.13.1'
+def grpcVersion = '1.15.1'
 
 protobuf {
     protoc {
@@ -87,7 +85,7 @@ protobuf {
             artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
         }
         grpckotlin {
-            artifact = "io.rouz:grpc-kotlin-gen:0.0.2:jdk8@jar"
+            artifact = "io.rouz:grpc-kotlin-gen:0.0.3:jdk8@jar"
         }
     }
     generateProtoTasks {
@@ -119,14 +117,14 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase() {
   private val pool = newFixedThreadPoolContext(4, "server-pool")
 
   override fun greet(request: GreetRequest)
-      : Deferred<GreetReply> = async(pool) {
+      : Deferred<GreetReply> = GlobalScope.async(pool) {
     GreetReply.newBuilder()
         .setReply("Hello " + request.greeting)
         .build()
   }
 
   override fun greetServerStream(request: GreetRequest)
-      : ReceiveChannel<GreetReply> = produce(pool) {
+      : ReceiveChannel<GreetReply> = GlobalScope.produce(pool) {
     send(GreetReply.newBuilder()
         .setReply("Hello ${request.greeting}!")
         .build())
@@ -136,7 +134,7 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase() {
   }
 
   override fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>)
-      : Deferred<GreetReply> = async(pool) {
+      : Deferred<GreetReply> = GlobalScope.async(pool) {
     val greetings = mutableListOf<String>()
 
     for (request in requestChannel) {
@@ -149,13 +147,13 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase() {
   }
 
   override fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>)
-      : ReceiveChannel<GreetReply> = produce(pool) {
+      : ReceiveChannel<GreetReply> = GlobalScope.produce(pool) {
     var count = 0
     val queue = mutableListOf<Job>()
 
     for (request in requestChannel) {
       val n = count++
-      val job = launch(pool) {
+      val job = GlobalScope.launch(pool) {
         delay(1000)
         send(GreetReply.newBuilder()
             .setReply("Yo #$n ${request.greeting}")
@@ -210,7 +208,7 @@ fun main(args: Array<String>) {
     // === Bidirectional call =====================================================================
 
     val (req, res) = greeter.greetBidirectional()
-    val l = launch {
+    val l = GlobalScope.launch {
       var n = 0
       for (greetReply in res) {
         println("r$n = ${greetReply.reply}")
@@ -303,7 +301,7 @@ val responseMessage = response.await()
 Using [`produce`] coroutine builder and `send` to return a stream of messages.
 
 ```kotlin
-override fun greetServerStream(request: GreetRequest): ReceiveChannel<GreetReply> = produce {
+override fun greetServerStream(request: GreetRequest): ReceiveChannel<GreetReply> = GlobalScope.produce {
   send( /* GreetReply message */ )
   send( /* GreetReply message */ )
   // ...
@@ -335,7 +333,7 @@ for (responseMessage in responses) {
 Using [`produce`] coroutine builder and `send` to return a stream of messages. Receiving messages from a `ReceiveChannel<T>`.
 
 ```kotlin
-override fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>): ReceiveChannel<GreetReply> = produce {
+override fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>): ReceiveChannel<GreetReply> = GlobalScope.produce {
   // receive request messages
   val firstRequest = requestChannel.receive()
   send( /* GreetReply message */ )
@@ -353,7 +351,7 @@ Using both a `SendChannel<T>` and a `ReceiveChannel<T>` to interact with the cal
 
 ```kotlin
 val (requests: SendChannel<GreetRequest>, responses: ReceiveChannel<GreetReply>) = stub.greetBidirectional()
-val responsePrinter = launch {
+val responsePrinter = GlobalScope.launch {
   for (responseMessage in responses) {
     log.info(responseMessage)
   }

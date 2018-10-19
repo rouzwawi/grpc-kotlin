@@ -14,10 +14,11 @@ import io.grpc.stub.StreamObserver
 
 import kotlinx.coroutines.experimental.CompletableDeferred
 import kotlinx.coroutines.experimental.Deferred
-import kotlinx.coroutines.experimental.channels.LinkedListChannel
+import kotlinx.coroutines.experimental.GlobalScope
+import kotlinx.coroutines.experimental.channels.Channel as KtChannel
 import kotlinx.coroutines.experimental.channels.ReceiveChannel
 import kotlinx.coroutines.experimental.channels.SendChannel
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.experimental.launch
 
 {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
 @javax.annotation.Generated(
@@ -61,7 +62,7 @@ object {{className}} {
       return response{{^isManyOutput}}Deferred{{/isManyOutput}}{{#isManyOutput}}Channel{{/isManyOutput}}
       {{/isManyInput}}
       {{#isManyInput}}
-      val requestChannel = LinkedListChannel<{{inputType}}>()
+      val requestChannel = KtChannel<{{inputType}}>(KtChannel.UNLIMITED)
       connectChannelToObserver(requestChannel, requestObserver)
       return ManyTo{{^isManyOutput}}One{{/isManyOutput}}{{#isManyOutput}}Many{{/isManyOutput}}Call(requestChannel, response{{^isManyOutput}}Deferred{{/isManyOutput}}{{#isManyOutput}}Channel{{/isManyOutput}})
       {{/isManyInput}}
@@ -103,7 +104,7 @@ object {{className}} {
 
   private fun <E> connectChannelToObserver(channel: ReceiveChannel<E>, observer: StreamObserver<E>) {
     // todo: specify coroutine context
-    runBlocking {
+    GlobalScope.launch {
       for (value in channel) {
         observer.onNext(value)
       }
@@ -113,7 +114,7 @@ object {{className}} {
 
   private fun <E> connectDeferredToObserver(deferred: Deferred<E>, observer: StreamObserver<E>) {
     // todo: specify coroutine context
-    runBlocking {
+    GlobalScope.launch {
       observer.onNext(deferred.await())
       observer.onCompleted()
     }
@@ -131,11 +132,13 @@ object {{className}} {
     : StreamObserver<E>,
       CompletableDeferred<E> by CompletableDeferred() {
     override fun onNext(value: E) { complete(value) }
-    override fun onError(t: Throwable) { completeExceptionally(t) }
+    override fun onError(t: Throwable) { cancel(t) }
     override fun onCompleted() { /* nothing */ }
   }
 
-  private class StreamObserverChannel<E> : LinkedListChannel<E>(), StreamObserver<E> {
+  private class StreamObserverChannel<E>
+    : KtChannel<E> by KtChannel<E>(KtChannel.UNLIMITED),
+      StreamObserver<E> {
     override fun onNext(value: E) { offer(value) }
     override fun onError(t: Throwable?) { close(cause = t) }
     override fun onCompleted() { close(cause = null) }

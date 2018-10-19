@@ -35,7 +35,7 @@ fun main(args: Array<String>) {
       .build()
       .start()
   val localhost = ManagedChannelBuilder.forAddress("localhost", 8080)
-      .usePlaintext(true)
+      .usePlaintext()
       .build()
 
   val greeter = GreeterGrpcKt.newStub(localhost)

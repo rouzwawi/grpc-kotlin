@@ -5,7 +5,7 @@
   <parent>
     <groupId>io.rouz</groupId>
     <artifactId>grpc-kotlin-parent</artifactId>
-    <version>0.0.3-SNAPSHOT</version>
+    <version>0.0.4-SNAPSHOT</version>
   </parent>
 
   <artifactId>grpc-kotlin-test</artifactId>
@@ -14,8 +14,8 @@
   <name>grpc-kotlin-test</name>
 
   <properties>
-    <kotlin.version>1.2.21</kotlin.version>
-    <grpc.version>1.10.0</grpc.version>
+    <kotlin.version>1.2.71</kotlin.version>
+    <grpc.version>1.15.1</grpc.version>
   </properties>
 
   <dependencies>
@@ -28,7 +28,7 @@
     <dependency>
       <groupId>org.jetbrains.kotlinx</groupId>
       <artifactId>kotlinx-coroutines-core</artifactId>
-      <version>0.22.3</version>
+      <version>0.30.2</version>
     </dependency>
 
     <dependency>
