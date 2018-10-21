@@ -64,10 +64,10 @@ fun main(args: Array<String>) {
         // === Bidirectional call =====================================================================
 
         val bidiCall = greeter.greetBidirectional()
-        val l = launch {
+        launch {
             var n = 0
             for (greetReply in bidiCall) {
-                log.info("r$n = ${greetReply.reply}")
+                log.info("reply $n = ${greetReply.reply}")
                 n++
             }
             log.info("no more replies")
@@ -81,9 +81,7 @@ fun main(args: Array<String>) {
 
         delay(200)
         bidiCall.send(req("Gina"))
-
         bidiCall.close()
-        l.join()
     }
 }
 

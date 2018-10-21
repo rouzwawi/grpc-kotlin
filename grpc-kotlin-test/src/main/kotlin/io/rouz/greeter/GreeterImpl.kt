@@ -20,7 +20,6 @@
 
 package io.rouz.greeter
 
-import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.channels.ReceiveChannel
 import kotlinx.coroutines.experimental.channels.produce
@@ -75,12 +74,11 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
 
     override fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
         var count = 0
-        val queue = mutableListOf<Job>()
 
         for (request in requestChannel) {
             val n = count++
             log.info("$n ${request.greeting}")
-            val job = launch {
+            launch {
                 delay(1000)
                 send(
                     GreetReply.newBuilder()
@@ -89,11 +87,7 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
                 )
                 log.info("dispatched $n")
             }
-            queue.add(job)
         }
-
-        log.info("waiting for jobs")
-        queue.forEach { it.join() }
 
         log.info("completing")
     }
