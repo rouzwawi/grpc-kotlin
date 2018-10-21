@@ -54,20 +54,46 @@ object {{className}} {
         {{#methods}}
         {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
         {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
-        fun {{methodName}}({{^isManyInput}}request: {{inputType}}{{/isManyInput}})
-                : {{^isManyInput}}{{^isManyOutput}}Deferred{{/isManyOutput}}{{#isManyOutput}}ReceiveChannel{{/isManyOutput}}<{{outputType}}>{{/isManyInput}}{{#isManyInput}}ManyTo{{^isManyOutput}}One{{/isManyOutput}}{{#isManyOutput}}Many{{/isManyOutput}}Call<{{inputType}}, {{outputType}}>{{/isManyInput}} {
-            {{^isManyOutput}}val responseDeferred = StreamObserverDeferred<{{outputType}}>(){{/isManyOutput}}
-            {{#isManyOutput}}val responseChannel = StreamObserverChannel<{{outputType}}>(){{/isManyOutput}}
-            {{#isManyInput}}val requestObserver = {{/isManyInput}}delegate.{{methodName}}({{^isManyInput}}request, {{/isManyInput}}response{{^isManyOutput}}Deferred{{/isManyOutput}}{{#isManyOutput}}Channel{{/isManyOutput}})
-            {{^isManyInput}}
-            return response{{^isManyOutput}}Deferred{{/isManyOutput}}{{#isManyOutput}}Channel{{/isManyOutput}}
-            {{/isManyInput}}
-            {{#isManyInput}}
+        {{^isManyInput}}
+        {{^isManyOutput}}
+        {{! == unary req, unary resp == }}
+        fun {{methodName}}(request: {{inputType}}): Deferred<{{outputType}}> {
+            val responseDeferred = StreamObserverDeferred<{{outputType}}>()
+            delegate.{{methodName}}(request, responseDeferred)
+            return responseDeferred
+        }
+        {{/isManyOutput}}
+        {{#isManyOutput}}
+        {{! == unary req, streaming resp == }}
+        fun {{methodName}}(request: {{inputType}}): ReceiveChannel<{{outputType}}> {
+            val responseChannel = StreamObserverChannel<{{outputType}}>()
+            delegate.{{methodName}}(request, responseChannel)
+            return responseChannel
+        }
+        {{/isManyOutput}}
+        {{/isManyInput}}
+        {{#isManyInput}}
+        {{^isManyOutput}}
+        {{! == streaming req, unary resp == }}
+        fun {{methodName}}(): ManyToOneCall<{{inputType}}, {{outputType}}> {
+            val responseDeferred = StreamObserverDeferred<{{outputType}}>()
+            val requestObserver = delegate.{{methodName}}(responseDeferred)
             val requestChannel = KtChannel<{{inputType}}>(KtChannel.UNLIMITED)
             connectChannelToObserver(requestChannel, requestObserver)
-            return ManyTo{{^isManyOutput}}One{{/isManyOutput}}{{#isManyOutput}}Many{{/isManyOutput}}Call(requestChannel, response{{^isManyOutput}}Deferred{{/isManyOutput}}{{#isManyOutput}}Channel{{/isManyOutput}})
-            {{/isManyInput}}
+            return ManyToOneCall(requestChannel, responseDeferred)
         }
+        {{/isManyOutput}}
+        {{#isManyOutput}}
+        {{! == streaming req, streaming resp == }}
+        fun {{methodName}}(): ManyToManyCall<{{inputType}}, {{outputType}}> {
+            val responseChannel = StreamObserverChannel<{{outputType}}>()
+            val requestObserver = delegate.{{methodName}}(responseChannel)
+            val requestChannel = KtChannel<{{inputType}}>(KtChannel.UNLIMITED)
+            connectChannelToObserver(requestChannel, requestObserver)
+            return ManyToManyCall(requestChannel, responseChannel)
+        }
+        {{/isManyOutput}}
+        {{/isManyInput}}
         {{/methods}}
     }
 
@@ -77,22 +103,70 @@ object {{className}} {
         {{#methods}}
         {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
         {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
-        open fun {{methodName}}(request{{#isManyInput}}Channel{{/isManyInput}}: {{#isManyInput}}ReceiveChannel<{{inputType}}>{{/isManyInput}}{{^isManyInput}}{{inputType}}{{/isManyInput}}): {{#isManyOutput}}ReceiveChannel{{/isManyOutput}}{{^isManyOutput}}Deferred{{/isManyOutput}}<{{outputType}}> {
+        {{^isManyInput}}
+        {{^isManyOutput}}
+        {{! == unary req, unary resp == }}
+        open fun {{methodName}}(request: {{inputType}}): Deferred<{{outputType}}> {
             throw io.grpc.StatusRuntimeException(io.grpc.Status.UNIMPLEMENTED)
         }
 
         internal fun {{methodName}}Internal(
-            {{^isManyInput}}request: {{inputType}},{{/isManyInput}}
+            request: {{inputType}},
             responseObserver: StreamObserver<{{outputType}}>
-        ){{#isManyInput}}: StreamObserver<{{inputType}}>{{/isManyInput}} {
-            {{#isManyInput}}val requestChannel = StreamObserverChannel<{{inputType}}>(){{/isManyInput}}
-            val response{{^isManyOutput}}Deferred{{/isManyOutput}}{{#isManyOutput}}Channel{{/isManyOutput}} = {{methodName}}(request{{#isManyInput}}Channel{{/isManyInput}})
-            {{#isManyOutput}}connectChannelToObserver(responseChannel, responseObserver){{/isManyOutput}}
-            {{^isManyOutput}}connectDeferredToObserver(responseDeferred, responseObserver){{/isManyOutput}}
-            {{#isManyInput}}return requestChannel{{/isManyInput}}
+        ) {
+            val responseDeferred = {{methodName}}(request)
+            connectDeferredToObserver(responseDeferred, responseObserver)
+        }
+        {{/isManyOutput}}
+        {{#isManyOutput}}
+        {{! == unary req, streaming resp == }}
+        open fun {{methodName}}(request: {{inputType}}): ReceiveChannel<{{outputType}}> {
+            throw io.grpc.StatusRuntimeException(io.grpc.Status.UNIMPLEMENTED)
         }
 
+        internal fun {{methodName}}Internal(
+            request: {{inputType}},
+            responseObserver: StreamObserver<{{outputType}}>
+        ) {
+            val responseChannel = {{methodName}}(request)
+            connectChannelToObserver(responseChannel, responseObserver)
+        }
+        {{/isManyOutput}}
+        {{/isManyInput}}
+        {{#isManyInput}}
+        {{^isManyOutput}}
+        {{! == streaming req, unary resp == }}
+        open fun {{methodName}}(requestChannel: ReceiveChannel<{{inputType}}>): Deferred<{{outputType}}> {
+            throw io.grpc.StatusRuntimeException(io.grpc.Status.UNIMPLEMENTED)
+        }
+
+        internal fun {{methodName}}Internal(
+            responseObserver: StreamObserver<{{outputType}}>
+        ): StreamObserver<{{inputType}}> {
+            val requestChannel = StreamObserverChannel<{{inputType}}>()
+            val responseDeferred = {{methodName}}(requestChannel)
+            connectDeferredToObserver(responseDeferred, responseObserver)
+            return requestChannel
+        }
+        {{/isManyOutput}}
+        {{#isManyOutput}}
+        {{! == streaming req, streaming resp == }}
+        open fun {{methodName}}(requestChannel: ReceiveChannel<{{inputType}}>): ReceiveChannel<{{outputType}}> {
+            throw io.grpc.StatusRuntimeException(io.grpc.Status.UNIMPLEMENTED)
+        }
+
+        internal fun {{methodName}}Internal(
+            responseObserver: StreamObserver<{{outputType}}>
+        ): StreamObserver<{{inputType}}> {
+            val requestChannel = StreamObserverChannel<{{inputType}}>()
+            val responseChannel = {{methodName}}(requestChannel)
+            connectChannelToObserver(responseChannel, responseObserver)
+            return requestChannel
+        }
+        {{/isManyOutput}}
+        {{/isManyInput}}
         {{/methods}}
+
         override fun bindService(): ServerServiceDefinition {
             return ServerServiceDefinition.builder(getServiceDescriptor())
                 {{#methods}}
