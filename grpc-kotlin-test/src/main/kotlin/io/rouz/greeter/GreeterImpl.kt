@@ -20,20 +20,25 @@
 
 package io.rouz.greeter
 
-import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.experimental.Job
+import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.channels.ReceiveChannel
 import kotlinx.coroutines.experimental.channels.produce
+import kotlinx.coroutines.experimental.delay
+import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import mu.KotlinLogging
 
 /**
  * Implementation of coroutine-based gRPC service defined in greeter.proto
  */
-class GreeterImpl : GreeterGrpcKt.GreeterImplBase() {
+class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
+    coroutineContext = newFixedThreadPoolContext(4, "server-pool")
+) {
 
-    private val pool = newFixedThreadPoolContext(4, "server-pool")
     private val log = KotlinLogging.logger("server")
 
-    override fun greet(request: GreetRequest): Deferred<GreetReply> = GlobalScope.async(pool) {
+    override fun greet(request: GreetRequest) = async<GreetReply> {
         log.info(request.greeting)
 
         GreetReply.newBuilder()
@@ -41,7 +46,7 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase() {
             .build()
     }
 
-    override fun greetServerStream(request: GreetRequest): ReceiveChannel<GreetReply> = GlobalScope.produce(pool) {
+    override fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
         log.info(request.greeting)
         send(
             GreetReply.newBuilder()
@@ -55,8 +60,7 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase() {
         )
     }
 
-    override fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>)
-            : Deferred<GreetReply> = GlobalScope.async(pool) {
+    override fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>) = async<GreetReply> {
         val greetings = mutableListOf<String>()
 
         for (request in requestChannel) {
@@ -69,15 +73,14 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase() {
             .build()
     }
 
-    override fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>)
-            : ReceiveChannel<GreetReply> = GlobalScope.produce(pool) {
+    override fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
         var count = 0
         val queue = mutableListOf<Job>()
 
         for (request in requestChannel) {
             val n = count++
             log.info("$n ${request.greeting}")
-            val job = launch(pool) {
+            val job = launch {
                 delay(1000)
                 send(
                     GreetReply.newBuilder()

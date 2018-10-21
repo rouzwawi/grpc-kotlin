@@ -1,5 +1,5 @@
 {{#packageName}}
-package {{packageName}};
+package {{packageName}}
 {{/packageName}}
 
 import {{packageName}}.{{serviceName}}Grpc.*
@@ -7,18 +7,25 @@ import {{packageName}}.{{serviceName}}Grpc.*
 import io.grpc.BindableService
 import io.grpc.CallOptions
 import io.grpc.Channel
+import io.grpc.MethodDescriptor
 import io.grpc.ServerServiceDefinition
+import io.grpc.Status
+import io.grpc.StatusException
+import io.grpc.StatusRuntimeException
 import io.grpc.stub.AbstractStub
 import io.grpc.stub.ServerCalls
 import io.grpc.stub.StreamObserver
 
 import kotlinx.coroutines.experimental.CompletableDeferred
+import kotlinx.coroutines.experimental.CoroutineScope
 import kotlinx.coroutines.experimental.Deferred
+import kotlinx.coroutines.experimental.Dispatchers
 import kotlinx.coroutines.experimental.GlobalScope
 import kotlinx.coroutines.experimental.channels.Channel as KtChannel
 import kotlinx.coroutines.experimental.channels.ReceiveChannel
 import kotlinx.coroutines.experimental.channels.SendChannel
 import kotlinx.coroutines.experimental.launch
+import kotlin.coroutines.experimental.CoroutineContext
 
 {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
 @javax.annotation.Generated(
@@ -98,7 +105,9 @@ object {{className}} {
     }
 
     {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
-    abstract class {{serviceName}}ImplBase : BindableService {
+    abstract class {{serviceName}}ImplBase(
+        override val coroutineContext: CoroutineContext = Dispatchers.Default
+    ) : BindableService, CoroutineScope {
 
         {{#methods}}
         {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
@@ -114,8 +123,13 @@ object {{className}} {
             request: {{inputType}},
             responseObserver: StreamObserver<{{outputType}}>
         ) {
-            val responseDeferred = {{methodName}}(request)
-            connectDeferredToObserver(responseDeferred, responseObserver)
+            launch {
+                tryCatchingStatus(responseObserver) {
+                    val response = {{methodName}}(request)
+                    responseObserver.onNext(response.await())
+                    responseObserver.onCompleted()
+                }
+            }
         }
         {{/isManyOutput}}
         {{#isManyOutput}}
@@ -128,8 +142,14 @@ object {{className}} {
             request: {{inputType}},
             responseObserver: StreamObserver<{{outputType}}>
         ) {
-            val responseChannel = {{methodName}}(request)
-            connectChannelToObserver(responseChannel, responseObserver)
+            launch {
+                tryCatchingStatus(responseObserver) {
+                    for (value in {{methodName}}(request)) {
+                        responseObserver.onNext(value)
+                    }
+                    responseObserver.onCompleted()
+                }
+            }
         }
         {{/isManyOutput}}
         {{/isManyInput}}
@@ -144,8 +164,13 @@ object {{className}} {
             responseObserver: StreamObserver<{{outputType}}>
         ): StreamObserver<{{inputType}}> {
             val requestChannel = StreamObserverChannel<{{inputType}}>()
-            val responseDeferred = {{methodName}}(requestChannel)
-            connectDeferredToObserver(responseDeferred, responseObserver)
+            launch {
+                tryCatchingStatus(responseObserver) {
+                    val response = {{methodName}}(requestChannel)
+                    responseObserver.onNext(response.await())
+                    responseObserver.onCompleted()
+                }
+            }
             return requestChannel
         }
         {{/isManyOutput}}
@@ -159,8 +184,14 @@ object {{className}} {
             responseObserver: StreamObserver<{{outputType}}>
         ): StreamObserver<{{inputType}}> {
             val requestChannel = StreamObserverChannel<{{inputType}}>()
-            val responseChannel = {{methodName}}(requestChannel)
-            connectChannelToObserver(responseChannel, responseObserver)
+            launch {
+                tryCatchingStatus(responseObserver) {
+                    for (value in {{methodName}}(requestChannel)) {
+                        responseObserver.onNext(value)
+                    }
+                    responseObserver.onCompleted()
+                }
+            }
             return requestChannel
         }
         {{/isManyOutput}}
@@ -178,6 +209,25 @@ object {{className}} {
                 )
                 {{/methods}}
                 .build()
+        }
+    }
+
+    private suspend fun tryCatchingStatus(responseObserver: StreamObserver<*>, body: suspend () -> Unit) {
+        try {
+            body()
+        } catch (t: StatusException) {
+            responseObserver.onError(t)
+        } catch (t: StatusRuntimeException) {
+            responseObserver.onError(t)
+        } catch (t: RuntimeException) {
+            responseObserver.onError(Status.UNKNOWN.asRuntimeException())
+            throw t
+        } catch (t: Exception) {
+            responseObserver.onError(Status.UNKNOWN.asException())
+            throw t
+        } catch (t: Throwable) {
+            responseObserver.onError(Status.INTERNAL.asException())
+            throw t
         }
     }
 
@@ -226,7 +276,7 @@ object {{className}} {
     }
 
     private class StreamObserverChannel<E>
-        : KtChannel<E> by KtChannel<E>(KtChannel.UNLIMITED), StreamObserver<E> {
+        : StreamObserver<E>, KtChannel<E> by KtChannel<E>(KtChannel.UNLIMITED) {
 
         override fun onNext(value: E) { offer(value) }
         override fun onError(t: Throwable?) { close(cause = t) }
