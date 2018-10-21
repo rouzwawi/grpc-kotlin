@@ -54,19 +54,19 @@ fun main(args: Array<String>) {
 
         // === Client streaming call ==================================================================
 
-        val (reqMany, resOne) = greeter.greetClientStream()
-        reqMany.send(req("Caroline"))
-        reqMany.send(req("David"))
-        reqMany.close()
-        val oneReply = resOne.await()
+        val manyToOneCall = greeter.greetClientStream()
+        manyToOneCall.send(req("Caroline"))
+        manyToOneCall.send(req("David"))
+        manyToOneCall.close()
+        val oneReply = manyToOneCall.await()
         log.info("single reply = ${oneReply.reply}")
 
         // === Bidirectional call =====================================================================
 
-        val (req, res) = greeter.greetBidirectional()
+        val bidiCall = greeter.greetBidirectional()
         val l = launch {
             var n = 0
-            for (greetReply in res) {
+            for (greetReply in bidiCall) {
                 log.info("r$n = ${greetReply.reply}")
                 n++
             }
@@ -74,15 +74,15 @@ fun main(args: Array<String>) {
         }
 
         delay(200)
-        req.send(req("Eve"))
+        bidiCall.send(req("Eve"))
 
         delay(200)
-        req.send(req("Fred"))
+        bidiCall.send(req("Fred"))
 
         delay(200)
-        req.send(req("Gina"))
+        bidiCall.send(req("Gina"))
 
-        req.close()
+        bidiCall.close()
         l.join()
     }
 }

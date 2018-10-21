@@ -267,15 +267,17 @@ object {{className}} {
         }
     }
 
-    data class ManyToOneCall<in TRequest, out TResponse>(
-        val request: SendChannel<TRequest>,
-        val response: Deferred<TResponse>
-    )
+    class ManyToOneCall<in TRequest, out TResponse>(
+        private val request: SendChannel<TRequest>,
+        private val response: Deferred<TResponse>
+    ) : SendChannel<TRequest> by request,
+        Deferred<TResponse> by response
 
-    data class ManyToManyCall<in TRequest, out TResponse>(
-        val request: SendChannel<TRequest>,
-        val response: ReceiveChannel<TResponse>
-    )
+    class ManyToManyCall<in TRequest, out TResponse>(
+        private val request: SendChannel<TRequest>,
+        private val response: ReceiveChannel<TResponse>
+    ) : SendChannel<TRequest> by request,
+        ReceiveChannel<TResponse> by response
 
     private class StreamObserverDeferred<E>
         : StreamObserver<E>, CompletableDeferred<E> by CompletableDeferred() {
