@@ -30,62 +30,68 @@ import mu.KotlinLogging
  */
 class GreeterImpl : GreeterGrpcKt.GreeterImplBase() {
 
-  private val pool = newFixedThreadPoolContext(4, "server-pool")
-  private val log = KotlinLogging.logger("server")
+    private val pool = newFixedThreadPoolContext(4, "server-pool")
+    private val log = KotlinLogging.logger("server")
 
-  override fun greet(request: GreetRequest): Deferred<GreetReply> = GlobalScope.async(pool) {
-    log.info(request.greeting)
+    override fun greet(request: GreetRequest): Deferred<GreetReply> = GlobalScope.async(pool) {
+        log.info(request.greeting)
 
-    GreetReply.newBuilder()
-        .setReply("Hello " + request.greeting)
-        .build()
-  }
-
-  override fun greetServerStream(request: GreetRequest): ReceiveChannel<GreetReply> = GlobalScope.produce(pool) {
-    log.info(request.greeting)
-    send(GreetReply.newBuilder()
-        .setReply("Hello ${request.greeting}!")
-        .build())
-    send(GreetReply.newBuilder()
-        .setReply("Greetings ${request.greeting}!")
-        .build())
-  }
-
-  override fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>)
-      : Deferred<GreetReply> = GlobalScope.async(pool) {
-    val greetings = mutableListOf<String>()
-
-    for (request in requestChannel) {
-      log.info(request.greeting)
-      greetings.add(request.greeting)
+        GreetReply.newBuilder()
+            .setReply("Hello " + request.greeting)
+            .build()
     }
 
-    GreetReply.newBuilder()
-        .setReply("Hi to all of $greetings!")
-        .build()
-  }
-
-  override fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>)
-      : ReceiveChannel<GreetReply> = GlobalScope.produce(pool) {
-    var count = 0
-    val queue = mutableListOf<Job>()
-
-    for (request in requestChannel) {
-      val n = count++
-      log.info("$n ${request.greeting}")
-      val job = launch(pool) {
-        delay(1000)
-        send(GreetReply.newBuilder()
-            .setReply("Yo #$n ${request.greeting}")
-            .build())
-        log.info("dispatched $n")
-      }
-      queue.add(job)
+    override fun greetServerStream(request: GreetRequest): ReceiveChannel<GreetReply> = GlobalScope.produce(pool) {
+        log.info(request.greeting)
+        send(
+            GreetReply.newBuilder()
+                .setReply("Hello ${request.greeting}!")
+                .build()
+        )
+        send(
+            GreetReply.newBuilder()
+                .setReply("Greetings ${request.greeting}!")
+                .build()
+        )
     }
 
-    log.info("waiting for jobs")
-    queue.forEach { it.join() }
+    override fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>)
+            : Deferred<GreetReply> = GlobalScope.async(pool) {
+        val greetings = mutableListOf<String>()
 
-    log.info("completing")
-  }
+        for (request in requestChannel) {
+            log.info(request.greeting)
+            greetings.add(request.greeting)
+        }
+
+        GreetReply.newBuilder()
+            .setReply("Hi to all of $greetings!")
+            .build()
+    }
+
+    override fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>)
+            : ReceiveChannel<GreetReply> = GlobalScope.produce(pool) {
+        var count = 0
+        val queue = mutableListOf<Job>()
+
+        for (request in requestChannel) {
+            val n = count++
+            log.info("$n ${request.greeting}")
+            val job = launch(pool) {
+                delay(1000)
+                send(
+                    GreetReply.newBuilder()
+                        .setReply("Yo #$n ${request.greeting}")
+                        .build()
+                )
+                log.info("dispatched $n")
+            }
+            queue.add(job)
+        }
+
+        log.info("waiting for jobs")
+        queue.forEach { it.join() }
+
+        log.info("completing")
+    }
 }

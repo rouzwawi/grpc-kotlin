@@ -23,175 +23,183 @@ import kotlinx.coroutines.experimental.launch
 {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
 @javax.annotation.Generated(
     value = ["by gRPC Kotlin generator"],
-    comments = "Source: {{protoName}}")
+    comments = "Source: {{protoName}}"
+)
 object {{className}} {
 
-  /**
-   * Creates a new coroutine stub that supports all call types for the service
-   */
-  @JvmStatic
-  fun newStub(channel: Channel): {{serviceName}}KtStub {
-    return {{serviceName}}KtStub(channel)
-  }
-
-  class {{serviceName}}KtStub : AbstractStub<{{serviceName}}KtStub> {
-
-    private val delegate: {{packageName}}.{{serviceName}}Grpc.{{serviceName}}Stub
-
-    internal constructor(channel: Channel) : super(channel) {
-      delegate = {{packageName}}.{{serviceName}}Grpc.newStub(channel)
+    /**
+     * Creates a new coroutine stub that supports all call types for the service
+     */
+    @JvmStatic
+    fun newStub(channel: Channel): {{serviceName}}KtStub {
+        return {{serviceName}}KtStub(channel)
     }
 
-    internal constructor(channel: Channel, callOptions: CallOptions) : super(channel, callOptions) {
-      delegate = {{packageName}}.{{serviceName}}Grpc.newStub(channel).build(channel, callOptions)
-    }
+    class {{serviceName}}KtStub : AbstractStub<{{serviceName}}KtStub> {
 
-    override fun build(channel: Channel, callOptions: CallOptions): {{serviceName}}KtStub {
-      return {{serviceName}}KtStub(channel, callOptions)
-    }
+        private val delegate: {{packageName}}.{{serviceName}}Grpc.{{serviceName}}Stub
 
-    {{#methods}}
-    {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
-    {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
-    fun {{methodName}}({{^isManyInput}}request: {{inputType}}{{/isManyInput}})
-        : {{^isManyInput}}{{^isManyOutput}}Deferred{{/isManyOutput}}{{#isManyOutput}}ReceiveChannel{{/isManyOutput}}<{{outputType}}>{{/isManyInput}}{{#isManyInput}}ManyTo{{^isManyOutput}}One{{/isManyOutput}}{{#isManyOutput}}Many{{/isManyOutput}}Call<{{inputType}}, {{outputType}}>{{/isManyInput}} {
-      {{^isManyOutput}}val responseDeferred = StreamObserverDeferred<{{outputType}}>(){{/isManyOutput}}
-      {{#isManyOutput}}val responseChannel = StreamObserverChannel<{{outputType}}>(){{/isManyOutput}}
-      {{#isManyInput}}val requestObserver = {{/isManyInput}}delegate.{{methodName}}({{^isManyInput}}request, {{/isManyInput}}response{{^isManyOutput}}Deferred{{/isManyOutput}}{{#isManyOutput}}Channel{{/isManyOutput}})
-      {{^isManyInput}}
-      return response{{^isManyOutput}}Deferred{{/isManyOutput}}{{#isManyOutput}}Channel{{/isManyOutput}}
-      {{/isManyInput}}
-      {{#isManyInput}}
-      val requestChannel = KtChannel<{{inputType}}>(KtChannel.UNLIMITED)
-      connectChannelToObserver(requestChannel, requestObserver)
-      return ManyTo{{^isManyOutput}}One{{/isManyOutput}}{{#isManyOutput}}Many{{/isManyOutput}}Call(requestChannel, response{{^isManyOutput}}Deferred{{/isManyOutput}}{{#isManyOutput}}Channel{{/isManyOutput}})
-      {{/isManyInput}}
-    }
-
-    {{/methods}}
-  }
-
-  {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
-  abstract class {{serviceName}}ImplBase : BindableService {
-
-    {{#methods}}
-    {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
-    {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
-    open fun {{methodName}}(request{{#isManyInput}}Channel{{/isManyInput}}: {{#isManyInput}}ReceiveChannel<{{inputType}}>{{/isManyInput}}{{^isManyInput}}{{inputType}}{{/isManyInput}}): {{#isManyOutput}}ReceiveChannel{{/isManyOutput}}{{^isManyOutput}}Deferred{{/isManyOutput}}<{{outputType}}> {
-      throw io.grpc.StatusRuntimeException(io.grpc.Status.UNIMPLEMENTED);
-    }
-
-    internal fun {{methodName}}Internal({{^isManyInput}}request: {{inputType}}, {{/isManyInput}}responseObserver: StreamObserver<{{outputType}}>){{#isManyInput}}: StreamObserver<{{inputType}}>{{/isManyInput}} {
-      {{#isManyInput}}val requestChannel = StreamObserverChannel<{{inputType}}>(){{/isManyInput}}
-      val response{{^isManyOutput}}Deferred{{/isManyOutput}}{{#isManyOutput}}Channel{{/isManyOutput}} = {{methodName}}(request{{#isManyInput}}Channel{{/isManyInput}})
-      {{#isManyOutput}}connectChannelToObserver(responseChannel, responseObserver){{/isManyOutput}}
-      {{^isManyOutput}}connectDeferredToObserver(responseDeferred, responseObserver){{/isManyOutput}}
-      {{#isManyInput}}return requestChannel{{/isManyInput}}
-    }
-
-    {{/methods}}
-    override fun bindService(): ServerServiceDefinition {
-      return ServerServiceDefinition.builder(getServiceDescriptor())
-          {{#methods}}
-          .addMethod(
-              get{{methodNamePascalCase}}Method(),
-              ServerCalls.{{grpcCallsMethodName}}(
-                  MethodHandlers(this, METHODID_{{methodNameUpperUnderscore}})))
-          {{/methods}}
-          .build();
-    }
-  }
-
-  private fun <E> connectChannelToObserver(channel: ReceiveChannel<E>, observer: StreamObserver<E>) {
-    // todo: specify coroutine context
-    GlobalScope.launch {
-      try {
-        for (value in channel) {
-          observer.onNext(value)
+        internal constructor(channel: Channel) : super(channel) {
+            delegate = {{packageName}}.{{serviceName}}Grpc.newStub(channel)
         }
-        observer.onCompleted()
-      } catch (t: Throwable) {
-        observer.onError(t)
-      }
-    }
-  }
 
-  private fun <E> connectDeferredToObserver(deferred: Deferred<E>, observer: StreamObserver<E>) {
-    // todo: specify coroutine context
-    GlobalScope.launch {
-      try {
-        observer.onNext(deferred.await())
-        observer.onCompleted()
-      } catch (t: Throwable) {
-        observer.onError(t)
-      }
-    }
-  }
+        internal constructor(channel: Channel, callOptions: CallOptions) : super(channel, callOptions) {
+            delegate = {{packageName}}.{{serviceName}}Grpc.newStub(channel).build(channel, callOptions)
+        }
 
-  data class ManyToOneCall<in TRequest, out TResponse>(
-      val request: SendChannel<TRequest>,
-      val response: Deferred<TResponse>)
+        override fun build(channel: Channel, callOptions: CallOptions): {{serviceName}}KtStub {
+            return {{serviceName}}KtStub(channel, callOptions)
+        }
 
-  data class ManyToManyCall<in TRequest, out TResponse>(
-      val request: SendChannel<TRequest>,
-      val response: ReceiveChannel<TResponse>)
-
-  private class StreamObserverDeferred<E>
-    : StreamObserver<E>,
-      CompletableDeferred<E> by CompletableDeferred() {
-    override fun onNext(value: E) { complete(value) }
-    override fun onError(t: Throwable) { cancel(t) }
-    override fun onCompleted() { /* nothing */ }
-  }
-
-  private class StreamObserverChannel<E>
-    : KtChannel<E> by KtChannel<E>(KtChannel.UNLIMITED),
-      StreamObserver<E> {
-    override fun onNext(value: E) { offer(value) }
-    override fun onError(t: Throwable?) { close(cause = t) }
-    override fun onCompleted() { close(cause = null) }
-  }
-
-  {{#methods}}
-  val METHODID_{{methodNameUpperUnderscore}} = {{methodNumber}};
-  {{/methods}}
-
-  private class MethodHandlers<Req, Resp> internal constructor(
-      private val serviceImpl: {{serviceName}}ImplBase,
-      private val methodId: Int
-  ) : ServerCalls.UnaryMethod<Req, Resp>,
-      ServerCalls.ServerStreamingMethod<Req, Resp>,
-      ServerCalls.ClientStreamingMethod<Req, Resp>,
-      ServerCalls.BidiStreamingMethod<Req, Resp> {
-
-
-    @Suppress("UNCHECKED_CAST")
-    override fun invoke(request: Req, responseObserver: StreamObserver<Resp>) {
-      when (methodId) {
         {{#methods}}
-        {{^isManyInput}}
-        METHODID_{{methodNameUpperUnderscore}} ->
-            serviceImpl.{{methodName}}Internal(
-                request as {{inputType}},
-                responseObserver as StreamObserver<{{outputType}}>)
-        {{/isManyInput}}
+        {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
+        {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
+        fun {{methodName}}({{^isManyInput}}request: {{inputType}}{{/isManyInput}})
+                : {{^isManyInput}}{{^isManyOutput}}Deferred{{/isManyOutput}}{{#isManyOutput}}ReceiveChannel{{/isManyOutput}}<{{outputType}}>{{/isManyInput}}{{#isManyInput}}ManyTo{{^isManyOutput}}One{{/isManyOutput}}{{#isManyOutput}}Many{{/isManyOutput}}Call<{{inputType}}, {{outputType}}>{{/isManyInput}} {
+            {{^isManyOutput}}val responseDeferred = StreamObserverDeferred<{{outputType}}>(){{/isManyOutput}}
+            {{#isManyOutput}}val responseChannel = StreamObserverChannel<{{outputType}}>(){{/isManyOutput}}
+            {{#isManyInput}}val requestObserver = {{/isManyInput}}delegate.{{methodName}}({{^isManyInput}}request, {{/isManyInput}}response{{^isManyOutput}}Deferred{{/isManyOutput}}{{#isManyOutput}}Channel{{/isManyOutput}})
+            {{^isManyInput}}
+            return response{{^isManyOutput}}Deferred{{/isManyOutput}}{{#isManyOutput}}Channel{{/isManyOutput}}
+            {{/isManyInput}}
+            {{#isManyInput}}
+            val requestChannel = KtChannel<{{inputType}}>(KtChannel.UNLIMITED)
+            connectChannelToObserver(requestChannel, requestObserver)
+            return ManyTo{{^isManyOutput}}One{{/isManyOutput}}{{#isManyOutput}}Many{{/isManyOutput}}Call(requestChannel, response{{^isManyOutput}}Deferred{{/isManyOutput}}{{#isManyOutput}}Channel{{/isManyOutput}})
+            {{/isManyInput}}
+        }
         {{/methods}}
-        else -> throw AssertionError()
-      }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    override fun invoke(responseObserver: StreamObserver<Resp>): StreamObserver<Req> {
-      when (methodId) {
+    {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
+    abstract class {{serviceName}}ImplBase : BindableService {
+
         {{#methods}}
-        {{#isManyInput}}
-        METHODID_{{methodNameUpperUnderscore}} ->
-            return serviceImpl.{{methodName}}Internal(
-                responseObserver as StreamObserver<{{outputType}}>) as StreamObserver<Req>
-        {{/isManyInput}}
+        {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
+        {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
+        open fun {{methodName}}(request{{#isManyInput}}Channel{{/isManyInput}}: {{#isManyInput}}ReceiveChannel<{{inputType}}>{{/isManyInput}}{{^isManyInput}}{{inputType}}{{/isManyInput}}): {{#isManyOutput}}ReceiveChannel{{/isManyOutput}}{{^isManyOutput}}Deferred{{/isManyOutput}}<{{outputType}}> {
+            throw io.grpc.StatusRuntimeException(io.grpc.Status.UNIMPLEMENTED)
+        }
+
+        internal fun {{methodName}}Internal(
+            {{^isManyInput}}request: {{inputType}},{{/isManyInput}}
+            responseObserver: StreamObserver<{{outputType}}>
+        ){{#isManyInput}}: StreamObserver<{{inputType}}>{{/isManyInput}} {
+            {{#isManyInput}}val requestChannel = StreamObserverChannel<{{inputType}}>(){{/isManyInput}}
+            val response{{^isManyOutput}}Deferred{{/isManyOutput}}{{#isManyOutput}}Channel{{/isManyOutput}} = {{methodName}}(request{{#isManyInput}}Channel{{/isManyInput}})
+            {{#isManyOutput}}connectChannelToObserver(responseChannel, responseObserver){{/isManyOutput}}
+            {{^isManyOutput}}connectDeferredToObserver(responseDeferred, responseObserver){{/isManyOutput}}
+            {{#isManyInput}}return requestChannel{{/isManyInput}}
+        }
+
         {{/methods}}
-        else -> throw AssertionError()
-      }
+        override fun bindService(): ServerServiceDefinition {
+            return ServerServiceDefinition.builder(getServiceDescriptor())
+                {{#methods}}
+                .addMethod(
+                    get{{methodNamePascalCase}}Method(),
+                    ServerCalls.{{grpcCallsMethodName}}(
+                        MethodHandlers(this, METHODID_{{methodNameUpperUnderscore}})
+                    )
+                )
+                {{/methods}}
+                .build()
+        }
     }
-  }
+
+    private fun <E> connectChannelToObserver(channel: ReceiveChannel<E>, observer: StreamObserver<E>) {
+        // todo: specify coroutine context
+        GlobalScope.launch {
+            try {
+                for (value in channel) {
+                    observer.onNext(value)
+                }
+                observer.onCompleted()
+            } catch (t: Throwable) {
+                observer.onError(t)
+            }
+        }
+    }
+
+    private fun <E> connectDeferredToObserver(deferred: Deferred<E>, observer: StreamObserver<E>) {
+        // todo: specify coroutine context
+        GlobalScope.launch {
+            try {
+                observer.onNext(deferred.await())
+                observer.onCompleted()
+            } catch (t: Throwable) {
+                observer.onError(t)
+            }
+        }
+    }
+
+    data class ManyToOneCall<in TRequest, out TResponse>(
+        val request: SendChannel<TRequest>,
+        val response: Deferred<TResponse>
+    )
+
+    data class ManyToManyCall<in TRequest, out TResponse>(
+        val request: SendChannel<TRequest>,
+        val response: ReceiveChannel<TResponse>
+    )
+
+    private class StreamObserverDeferred<E>
+        : StreamObserver<E>, CompletableDeferred<E> by CompletableDeferred() {
+
+        override fun onNext(value: E) { complete(value) }
+        override fun onError(t: Throwable) { cancel(t) }
+        override fun onCompleted() { /* nothing */ }
+    }
+
+    private class StreamObserverChannel<E>
+        : KtChannel<E> by KtChannel<E>(KtChannel.UNLIMITED), StreamObserver<E> {
+
+        override fun onNext(value: E) { offer(value) }
+        override fun onError(t: Throwable?) { close(cause = t) }
+        override fun onCompleted() { close(cause = null) }
+    }
+
+    {{#methods}}
+    val METHODID_{{methodNameUpperUnderscore}} = {{methodNumber}}
+    {{/methods}}
+
+    private class MethodHandlers<Req, Resp> internal constructor(
+        private val serviceImpl: {{serviceName}}ImplBase,
+        private val methodId: Int
+    ) : ServerCalls.UnaryMethod<Req, Resp>,
+        ServerCalls.ServerStreamingMethod<Req, Resp>,
+        ServerCalls.ClientStreamingMethod<Req, Resp>,
+        ServerCalls.BidiStreamingMethod<Req, Resp> {
+
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(request: Req, responseObserver: StreamObserver<Resp>) {
+            when (methodId) {
+                {{#methods}}
+                {{^isManyInput}}
+                METHODID_{{methodNameUpperUnderscore}} ->
+                    serviceImpl.{{methodName}}Internal(
+                        request as {{inputType}},
+                        responseObserver as StreamObserver<{{outputType}}>
+                    )
+                {{/isManyInput}}
+                {{/methods}}
+                else -> throw AssertionError()
+            }
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(responseObserver: StreamObserver<Resp>): StreamObserver<Req> {
+            return when (methodId) {
+                {{#methods}}
+                {{#isManyInput}}
+                METHODID_{{methodNameUpperUnderscore}} ->
+                    serviceImpl.{{methodName}}Internal(
+                        responseObserver as StreamObserver<{{outputType}}>
+                    ) as StreamObserver<Req>
+                {{/isManyInput}}
+                {{/methods}}
+                else -> throw AssertionError()
+            }
+        }
+    }
 }

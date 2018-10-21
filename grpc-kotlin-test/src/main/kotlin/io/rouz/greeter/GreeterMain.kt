@@ -28,66 +28,65 @@ import kotlinx.coroutines.experimental.runBlocking
 import mu.KotlinLogging
 
 fun main(args: Array<String>) {
+    val log = KotlinLogging.logger("client")
+    ServerBuilder.forPort(8080)
+        .addService(GreeterImpl())
+        .build()
+        .start()
+    val localhost = ManagedChannelBuilder.forAddress("localhost", 8080)
+        .usePlaintext()
+        .build()
 
-  val log = KotlinLogging.logger("client")
-  ServerBuilder.forPort(8080)
-      .addService(GreeterImpl())
-      .build()
-      .start()
-  val localhost = ManagedChannelBuilder.forAddress("localhost", 8080)
-      .usePlaintext()
-      .build()
+    val greeter = GreeterGrpcKt.newStub(localhost)
 
-  val greeter = GreeterGrpcKt.newStub(localhost)
+    runBlocking {
+        // === Unary call =============================================================================
 
-  runBlocking {
-    // === Unary call =============================================================================
+        val unaryResponse = greeter.greet(req("Alice")).await()
+        log.info("unary reply = ${unaryResponse.reply}")
 
-    val unaryResponse = greeter.greet(req("Alice")).await()
-    log.info("unary reply = ${unaryResponse.reply}")
+        // === Server streaming call ==================================================================
 
-    // === Server streaming call ==================================================================
+        val serverResponses = greeter.greetServerStream(req("Bob"))
+        for (serverResponse in serverResponses) {
+            log.info("server response = ${serverResponse.reply}")
+        }
 
-    val serverResponses = greeter.greetServerStream(req("Bob"))
-    for (serverResponse in serverResponses) {
-      log.info("server response = ${serverResponse.reply}")
+        // === Client streaming call ==================================================================
+
+        val (reqMany, resOne) = greeter.greetClientStream()
+        reqMany.send(req("Caroline"))
+        reqMany.send(req("David"))
+        reqMany.close()
+        val oneReply = resOne.await()
+        log.info("single reply = ${oneReply.reply}")
+
+        // === Bidirectional call =====================================================================
+
+        val (req, res) = greeter.greetBidirectional()
+        val l = launch {
+            var n = 0
+            for (greetReply in res) {
+                log.info("r$n = ${greetReply.reply}")
+                n++
+            }
+            log.info("no more replies")
+        }
+
+        delay(200)
+        req.send(req("Eve"))
+
+        delay(200)
+        req.send(req("Fred"))
+
+        delay(200)
+        req.send(req("Gina"))
+
+        req.close()
+        l.join()
     }
-
-    // === Client streaming call ==================================================================
-
-    val (reqMany, resOne) = greeter.greetClientStream()
-    reqMany.send(req("Caroline"))
-    reqMany.send(req("David"))
-    reqMany.close()
-    val oneReply = resOne.await()
-    log.info("single reply = ${oneReply.reply}")
-
-    // === Bidirectional call =====================================================================
-
-    val (req, res) = greeter.greetBidirectional()
-    val l = launch {
-      var n = 0
-      for (greetReply in res) {
-        log.info("r$n = ${greetReply.reply}")
-        n++
-      }
-      log.info("no more replies")
-    }
-
-    delay(200)
-    req.send(req("Eve"))
-
-    delay(200)
-    req.send(req("Fred"))
-
-    delay(200)
-    req.send(req("Gina"))
-
-    req.close()
-    l.join()
-  }
 }
 
 fun req(greeting: String): GreetRequest {
-  return GreetRequest.newBuilder().setGreeting(greeting).build()
+    return GreetRequest.newBuilder().setGreeting(greeting).build()
 }
