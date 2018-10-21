@@ -116,7 +116,7 @@ object {{className}} {
         {{^isManyOutput}}
         {{! == unary req, unary resp == }}
         open fun {{methodName}}(request: {{inputType}}): Deferred<{{outputType}}> {
-            throw io.grpc.StatusRuntimeException(io.grpc.Status.UNIMPLEMENTED)
+            throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
         }
 
         internal fun {{methodName}}Internal(
@@ -135,7 +135,7 @@ object {{className}} {
         {{#isManyOutput}}
         {{! == unary req, streaming resp == }}
         open fun {{methodName}}(request: {{inputType}}): ReceiveChannel<{{outputType}}> {
-            throw io.grpc.StatusRuntimeException(io.grpc.Status.UNIMPLEMENTED)
+            throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
         }
 
         internal fun {{methodName}}Internal(
@@ -157,7 +157,7 @@ object {{className}} {
         {{^isManyOutput}}
         {{! == streaming req, unary resp == }}
         open fun {{methodName}}(requestChannel: ReceiveChannel<{{inputType}}>): Deferred<{{outputType}}> {
-            throw io.grpc.StatusRuntimeException(io.grpc.Status.UNIMPLEMENTED)
+            throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
         }
 
         internal fun {{methodName}}Internal(
@@ -177,7 +177,7 @@ object {{className}} {
         {{#isManyOutput}}
         {{! == streaming req, streaming resp == }}
         open fun {{methodName}}(requestChannel: ReceiveChannel<{{inputType}}>): ReceiveChannel<{{outputType}}> {
-            throw io.grpc.StatusRuntimeException(io.grpc.Status.UNIMPLEMENTED)
+            throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
         }
 
         internal fun {{methodName}}Internal(
@@ -210,6 +210,16 @@ object {{className}} {
                 {{/methods}}
                 .build()
         }
+    }
+
+    private fun unimplemented(methodDescriptor: MethodDescriptor<*, *>): Status {
+        return Status.UNIMPLEMENTED
+            .withDescription(
+                String.format(
+                    "Method %s is unimplemented",
+                    methodDescriptor.fullMethodName
+                )
+            )
     }
 
     private suspend fun tryCatchingStatus(responseObserver: StreamObserver<*>, body: suspend () -> Unit) {
