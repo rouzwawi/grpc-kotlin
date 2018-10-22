@@ -20,7 +20,6 @@
 
 package io.rouz.greeter
 
-import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.channels.ReceiveChannel
 import kotlinx.coroutines.experimental.channels.produce
 import kotlinx.coroutines.experimental.delay
@@ -37,10 +36,10 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
 
     private val log = KotlinLogging.logger("server")
 
-    override fun greet(request: GreetRequest) = async<GreetReply> {
+    override suspend fun greet(request: GreetRequest): GreetReply {
         log.info(request.greeting)
 
-        GreetReply.newBuilder()
+        return GreetReply.newBuilder()
             .setReply("Hello " + request.greeting)
             .build()
     }
@@ -60,7 +59,7 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
         )
     }
 
-    override fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>) = async<GreetReply> {
+    override suspend fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): GreetReply {
         val greetings = mutableListOf<String>()
 
         for (request in requestChannel) {
@@ -68,7 +67,7 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
             greetings.add(request.greeting)
         }
 
-        GreetReply.newBuilder()
+        return GreetReply.newBuilder()
             .setReply("Hi to all of $greetings!")
             .build()
     }

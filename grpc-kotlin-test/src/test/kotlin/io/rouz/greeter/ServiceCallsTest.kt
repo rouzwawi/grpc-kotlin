@@ -34,7 +34,7 @@ class ServiceCallsTest : GrpcTestBase() {
         val stub = startServer(GreeterImpl())
 
         runBlocking {
-            val reply = stub.greet(req("rouz")).await()
+            val reply = stub.greet(req("rouz"))
 
             assertEquals("Hello rouz", reply.reply)
         }

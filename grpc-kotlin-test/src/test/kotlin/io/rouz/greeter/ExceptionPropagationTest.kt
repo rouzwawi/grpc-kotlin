@@ -24,7 +24,6 @@ import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import kotlinx.coroutines.experimental.CoroutineExceptionHandler
 import kotlinx.coroutines.experimental.Dispatchers
-import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.channels.ReceiveChannel
 import kotlinx.coroutines.experimental.channels.produce
 import kotlinx.coroutines.experimental.runBlocking
@@ -49,7 +48,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
         expect.expectMessage("NOT_FOUND: neh")
 
         runBlocking {
-            stub.greet(req("joe")).await()
+            stub.greet(req("joe"))
         }
     }
 
@@ -97,7 +96,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
         expect.expectMessage("UNKNOWN")
 
         runBlocking {
-            stub.greet(req("joe")).await()
+            stub.greet(req("joe"))
         }
     }
 
@@ -139,7 +138,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
 
     private class StatusThrowingGreeter : GreeterGrpcKt.GreeterImplBase() {
 
-        override fun greet(request: GreetRequest) = async<GreetReply> {
+        override suspend fun greet(request: GreetRequest): GreetReply {
             throw notFound()
         }
 
@@ -147,7 +146,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
             throw notFound()
         }
 
-        override fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>) = async<GreetReply> {
+        override suspend fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): GreetReply {
             throw notFound()
         }
 
@@ -164,7 +163,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
         Dispatchers.Default + CoroutineExceptionHandler { _, _ -> /* shh */ }
     ) {
 
-        override fun greet(request: GreetRequest) = async<GreetReply> {
+        override suspend fun greet(request: GreetRequest): GreetReply {
             throw broke()
         }
 
@@ -172,7 +171,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
             throw broke()
         }
 
-        override fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>) = async<GreetReply> {
+        override suspend fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): GreetReply {
             throw broke()
         }
 

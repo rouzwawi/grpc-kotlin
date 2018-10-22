@@ -42,7 +42,7 @@ fun main(args: Array<String>) {
     runBlocking {
         // === Unary call =============================================================================
 
-        val unaryResponse = greeter.greet(req("Alice")).await()
+        val unaryResponse = greeter.greet(req("Alice"))
         log.info("unary reply = ${unaryResponse.reply}")
 
         // === Server streaming call ==================================================================

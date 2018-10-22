@@ -26,7 +26,9 @@ import kotlinx.coroutines.experimental.channels.ReceiveChannel
 import kotlinx.coroutines.experimental.channels.SendChannel
 import kotlinx.coroutines.experimental.channels.consumeEach
 import kotlinx.coroutines.experimental.launch
+import kotlin.coroutines.experimental.Continuation
 import kotlin.coroutines.experimental.CoroutineContext
+import kotlin.coroutines.experimental.suspendCoroutine
 
 {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
 @javax.annotation.Generated(
@@ -65,10 +67,10 @@ object {{className}} {
         {{^isManyInput}}
         {{^isManyOutput}}
         {{! == unary req, unary resp == }}
-        fun {{methodName}}(request: {{inputType}}): Deferred<{{outputType}}> {
-            val responseDeferred = StreamObserverDeferred<{{outputType}}>()
-            delegate.{{methodName}}(request, responseDeferred)
-            return responseDeferred
+        suspend fun {{methodName}}(request: {{inputType}}): {{outputType}} {
+            return suspendCoroutine { cont ->
+                delegate.{{methodName}}(request, ContinuationStreamObserver(cont))
+            }
         }
         {{/isManyOutput}}
         {{#isManyOutput}}
@@ -112,7 +114,7 @@ object {{className}} {
         {{^isManyInput}}
         {{^isManyOutput}}
         {{! == unary req, unary resp == }}
-        open fun {{methodName}}(request: {{inputType}}): Deferred<{{outputType}}> {
+        open suspend fun {{methodName}}(request: {{inputType}}): {{outputType}} {
             throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
         }
 
@@ -123,7 +125,7 @@ object {{className}} {
             launch {
                 tryCatchingStatus(responseObserver) {
                     val response = {{methodName}}(request)
-                    onNext(response.await())
+                    onNext(response)
                 }
             }
         }
@@ -150,7 +152,7 @@ object {{className}} {
         {{#isManyInput}}
         {{^isManyOutput}}
         {{! == streaming req, unary resp == }}
-        open fun {{methodName}}(requestChannel: ReceiveChannel<{{inputType}}>): Deferred<{{outputType}}> {
+        open suspend fun {{methodName}}(requestChannel: ReceiveChannel<{{inputType}}>): {{outputType}} {
             throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
         }
 
@@ -161,7 +163,7 @@ object {{className}} {
             launch {
                 tryCatchingStatus(responseObserver) {
                     val response = {{methodName}}(requestChannel)
-                    onNext(response.await())
+                    onNext(response)
                 }
             }
             return requestChannel
@@ -260,6 +262,14 @@ object {{className}} {
         fun send(element: E) {
             streamObserver.onNext(element)
         }
+    }
+
+    private class ContinuationStreamObserver<E>(
+        private val continuation: Continuation<E>
+    ) : StreamObserver<E> {
+        override fun onNext(value: E) { continuation.resume(value) }
+        override fun onError(t: Throwable) { continuation.resumeWithException(t) }
+        override fun onCompleted() { }
     }
 
     private class StreamObserverDeferred<E>(
