@@ -47,6 +47,7 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
 
     override fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
         log.info(request.greeting)
+
         send(
             GreetReply.newBuilder()
                 .setReply("Hello ${request.greeting}!")
