@@ -116,8 +116,8 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
     coroutineContext = newFixedThreadPoolContext(4, "server-pool")
 ) {
 
-  override fun greet(request: GreetRequest) = async<GreetReply> {
-    GreetReply.newBuilder()
+  override suspend fun greet(request: GreetRequest): GreetReply {
+    return GreetReply.newBuilder()
         .setReply("Hello " + request.greeting)
         .build()
   }
@@ -131,14 +131,14 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
         .build())
   }
 
-  override fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>) = async<GreetReply> {
+  override suspend fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): GreetReply {
     val greetings = mutableListOf<String>()
 
     for (request in requestChannel) {
       greetings.add(request.greeting)
     }
 
-    GreetReply.newBuilder()
+    return GreetReply.newBuilder()
         .setReply("Hi to all of $greetings!")
         .build()
   }
@@ -178,7 +178,7 @@ fun main(args: Array<String>) {
   runBlocking {
     // === Unary call =============================================================================
 
-    val unaryResponse = greeter.greet(req("Alice")).await()
+    val unaryResponse = greeter.greet(req("Alice"))
     println("unary reply = ${unaryResponse.reply}")
 
     // === Server streaming call ==================================================================
@@ -231,21 +231,20 @@ fun main(args: Array<String>) {
 
 #### Service
 
-Using [`async`] coroutine builder to return a single message.
+A suspendable function which returns a single message.
 
 ```kotlin
-override fun greet(request: GreetRequest): Deferred<GreetReply> = async {
+override suspend fun greet(request: GreetRequest): GreetReply {
   // return GreetReply message
 }
 ```
 
 #### Client
 
-Using `await()` on `Deferred<T>`.
+Suspendable call returning a single message.
 
 ```kotlin
-val response: Deferred<GreetReply> = stub.greet( /* GreetRequest */ )
-val responseMessage = response.await()
+val response: GreetReply = stub.greet( /* GreetRequest */ )
 ```
 
 ### Streaming request, Unary response
@@ -254,10 +253,10 @@ val responseMessage = response.await()
 
 #### Service
 
-Using [`async`] coroutine builder to return a single message, and receiving messages from a `ReceiveChannel<T>`.
+A suspendable function which returns a single message, and receives messages from a `ReceiveChannel<T>`.
 
 ```kotlin
-override fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): Deferred<GreetReply> = async {
+override suspend fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): GreetReply {
   // receive request messages
   val firstRequest = requestChannel.receive()
   
