@@ -355,7 +355,7 @@ call.close() //  don't forget to close the send channel
 
 
 [protoc]: https://www.xolstice.org/protobuf-maven-plugin/examples/protoc-plugin.html
-[suspend]: https://kotlinlang.org/docs/reference/coroutines-overview.html
+[`suspend`]: https://kotlinlang.org/docs/reference/coroutines-overview.html
 [coroutine primitives]: https://github.com/Kotlin/kotlinx.coroutines
 [core coroutine primitives]: https://github.com/Kotlin/kotlinx.coroutines/blob/master/core/kotlinx-coroutines-core/README.md
 [`Channel`]: https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental.channels/-channel/index.html
