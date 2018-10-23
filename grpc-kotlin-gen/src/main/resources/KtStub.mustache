@@ -320,11 +320,11 @@ object {{className}} {
 
         @Suppress("UNCHECKED_CAST")
         override fun invoke(responseObserver: StreamObserver<Resp>): StreamObserver<Req> {
-            return when (methodId) {
+            when (methodId) {
                 {{#methods}}
                 {{#isManyInput}}
                 METHODID_{{methodNameUpperUnderscore}} ->
-                    serviceImpl.{{methodName}}Internal(
+                    return serviceImpl.{{methodName}}Internal(
                         responseObserver as StreamObserver<{{outputType}}>
                     ) as StreamObserver<Req>
                 {{/isManyInput}}
