@@ -16,9 +16,8 @@ In situations where you'd want to coordinate several request and response messag
 having to manage some tricky state and synchronization between the observers. There's some [reactive bindings]
 for gRPC which make this easier. But I think we can do better!
 
-Enter Kotlin Coroutines! By generating native Kotlin stubs that allows us to use [`Channel`] and [`Deferred`],
-we can write our handler and client code in a much more readable fashion that is a lot easier to reason
-about.
+Enter Kotlin Coroutines! By generating native Kotlin stubs that allows us to use [`suspend`] functions and 
+[`Channel`], we can write our handler and client code in idiomatic and easy to read Kotlin style.
 
 ## Quick start
 
@@ -99,13 +98,13 @@ protobuf {
 
 ### Server
 
-After compilation, you'll find the generated Kotlin stubs in an `object` named `GreeterGrpcKt`. Both the
-service base class and client stub will use `Deferred<T>` and `{Send,Receive}Channel<T>` instead of the
-typical `StreamObserver<T>` interfaces.
+After compilation, you'll find the generated Kotlin stubs in an `object` named `GreeterGrpcKt`. Both
+the service base class and client stub will use `suspend` and `ReceiveChannel<T>` instead of
+the typical `StreamObserver<T>` interfaces.
 
-Here's a server implementation using some of the [core coroutine primitives] like `async` and `produce`
-to create `Deferred` and `ReceiveChannel` values. Other top level primitives like `delay` are available
-for use too.
+Here's an example server that demonstrates how each type of endpoint is implemented, either as a
+[`suspend`] function for unary responses or using a [core coroutine primitives] like `produce` to
+create a `ReceiveChannel`. Other top level primitives like `delay` are available for use too. 
 
 ```kotlin
 import kotlinx.coroutines.experimental.*
@@ -161,7 +160,8 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
 
 ### Client
 
-The generated client stub is also fully implemented using `Deferred` and `SendChannel`.
+The generated client stub is also fully implemented using `suspend`ing functions, `Deferred` and
+`SendChannel`.
 
 ```kotlin
 import io.grpc.ManagedChannelBuilder
@@ -355,6 +355,7 @@ call.close() //  don't forget to close the send channel
 
 
 [protoc]: https://www.xolstice.org/protobuf-maven-plugin/examples/protoc-plugin.html
+[suspend]: https://kotlinlang.org/docs/reference/coroutines-overview.html
 [coroutine primitives]: https://github.com/Kotlin/kotlinx.coroutines
 [core coroutine primitives]: https://github.com/Kotlin/kotlinx.coroutines/blob/master/core/kotlinx-coroutines-core/README.md
 [`Channel`]: https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental.channels/-channel/index.html
