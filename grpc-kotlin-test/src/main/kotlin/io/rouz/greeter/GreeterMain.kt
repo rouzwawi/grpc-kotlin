@@ -42,7 +42,7 @@ fun main(args: Array<String>) {
     runBlocking {
         // === Unary call =============================================================================
 
-        val unaryResponse = greeter.greet(req("Alice")).await()
+        val unaryResponse = greeter.greet(req("Alice"))
         log.info("unary reply = ${unaryResponse.reply}")
 
         // === Server streaming call ==================================================================
@@ -54,36 +54,34 @@ fun main(args: Array<String>) {
 
         // === Client streaming call ==================================================================
 
-        val (reqMany, resOne) = greeter.greetClientStream()
-        reqMany.send(req("Caroline"))
-        reqMany.send(req("David"))
-        reqMany.close()
-        val oneReply = resOne.await()
+        val manyToOneCall = greeter.greetClientStream()
+        manyToOneCall.send(req("Caroline"))
+        manyToOneCall.send(req("David"))
+        manyToOneCall.close()
+        val oneReply = manyToOneCall.await()
         log.info("single reply = ${oneReply.reply}")
 
         // === Bidirectional call =====================================================================
 
-        val (req, res) = greeter.greetBidirectional()
-        val l = launch {
+        val bidiCall = greeter.greetBidirectional()
+        launch {
             var n = 0
-            for (greetReply in res) {
-                log.info("r$n = ${greetReply.reply}")
+            for (greetReply in bidiCall) {
+                log.info("reply $n = ${greetReply.reply}")
                 n++
             }
             log.info("no more replies")
         }
 
         delay(200)
-        req.send(req("Eve"))
+        bidiCall.send(req("Eve"))
 
         delay(200)
-        req.send(req("Fred"))
+        bidiCall.send(req("Fred"))
 
         delay(200)
-        req.send(req("Gina"))
-
-        req.close()
-        l.join()
+        bidiCall.send(req("Gina"))
+        bidiCall.close()
     }
 }
 

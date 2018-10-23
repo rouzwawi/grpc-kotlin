@@ -112,19 +112,17 @@ import kotlinx.coroutines.experimental.*
 import kotlinx.coroutines.experimental.channels.ReceiveChannel
 import kotlinx.coroutines.experimental.channels.produce
 
-class GreeterImpl : GreeterGrpcKt.GreeterImplBase() {
+class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
+    coroutineContext = newFixedThreadPoolContext(4, "server-pool")
+) {
 
-  private val pool = newFixedThreadPoolContext(4, "server-pool")
-
-  override fun greet(request: GreetRequest)
-      : Deferred<GreetReply> = GlobalScope.async(pool) {
-    GreetReply.newBuilder()
+  override suspend fun greet(request: GreetRequest): GreetReply {
+    return GreetReply.newBuilder()
         .setReply("Hello " + request.greeting)
         .build()
   }
 
-  override fun greetServerStream(request: GreetRequest)
-      : ReceiveChannel<GreetReply> = GlobalScope.produce(pool) {
+  override fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
     send(GreetReply.newBuilder()
         .setReply("Hello ${request.greeting}!")
         .build())
@@ -133,36 +131,30 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase() {
         .build())
   }
 
-  override fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>)
-      : Deferred<GreetReply> = GlobalScope.async(pool) {
+  override suspend fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): GreetReply {
     val greetings = mutableListOf<String>()
 
     for (request in requestChannel) {
       greetings.add(request.greeting)
     }
 
-    GreetReply.newBuilder()
+    return GreetReply.newBuilder()
         .setReply("Hi to all of $greetings!")
         .build()
   }
 
-  override fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>)
-      : ReceiveChannel<GreetReply> = GlobalScope.produce(pool) {
+  override fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
     var count = 0
-    val queue = mutableListOf<Job>()
 
     for (request in requestChannel) {
       val n = count++
-      val job = GlobalScope.launch(pool) {
+      launch {
         delay(1000)
         send(GreetReply.newBuilder()
             .setReply("Yo #$n ${request.greeting}")
             .build())
       }
-      queue.add(job)
     }
-
-    queue.forEach { it.join() }
   }
 }
 ```
@@ -186,7 +178,7 @@ fun main(args: Array<String>) {
   runBlocking {
     // === Unary call =============================================================================
 
-    val unaryResponse = greeter.greet(req("Alice")).await()
+    val unaryResponse = greeter.greet(req("Alice"))
     println("unary reply = ${unaryResponse.reply}")
 
     // === Server streaming call ==================================================================
@@ -198,19 +190,19 @@ fun main(args: Array<String>) {
 
     // === Client streaming call ==================================================================
 
-    val (reqMany, resOne) = greeter.greetClientStream()
-    reqMany.send(req("Caroline"))
-    reqMany.send(req("David"))
-    reqMany.close()
-    val oneReply = resOne.await()
+    val manyToOneCall = greeter.greetClientStream()
+    manyToOneCall.send(req("Caroline"))
+    manyToOneCall.send(req("David"))
+    manyToOneCall.close()
+    val oneReply = manyToOneCall.await()
     println("single reply = ${oneReply.reply}")
 
     // === Bidirectional call =====================================================================
 
-    val (req, res) = greeter.greetBidirectional()
-    val l = GlobalScope.launch {
+    val bidiCall = greeter.greetBidirectional()
+    launch {
       var n = 0
-      for (greetReply in res) {
+      for (greetReply in bidiCall) {
         println("r$n = ${greetReply.reply}")
         n++
       }
@@ -218,16 +210,15 @@ fun main(args: Array<String>) {
     }
 
     delay(200)
-    req.send(req("Eve"))
+    bidiCall.send(req("Eve"))
 
     delay(200)
-    req.send(req("Fred"))
+    bidiCall.send(req("Fred"))
 
     delay(200)
-    req.send(req("Gina"))
+    bidiCall.send(req("Gina"))
 
-    req.close()
-    l.join()
+    bidiCall.close()
   }
 }
 ```
@@ -240,21 +231,20 @@ fun main(args: Array<String>) {
 
 #### Service
 
-Using [`async`] coroutine builder to return a single message.
+A suspendable function which returns a single message.
 
 ```kotlin
-override fun greet(request: GreetRequest): Deferred<GreetReply> = async {
+override suspend fun greet(request: GreetRequest): GreetReply {
   // return GreetReply message
 }
 ```
 
 #### Client
 
-Using `await()` on `Deferred<T>`.
+Suspendable call returning a single message.
 
 ```kotlin
-val response: Deferred<GreetReply> = stub.greet( /* GreetRequest */ )
-val responseMessage = response.await()
+val response: GreetReply = stub.greet( /* GreetRequest */ )
 ```
 
 ### Streaming request, Unary response
@@ -263,10 +253,10 @@ val responseMessage = response.await()
 
 #### Service
 
-Using [`async`] coroutine builder to return a single message, and receiving messages from a `ReceiveChannel<T>`.
+A suspendable function which returns a single message, and receives messages from a `ReceiveChannel<T>`.
 
 ```kotlin
-override fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): Deferred<GreetReply> = async {
+override suspend fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): GreetReply {
   // receive request messages
   val firstRequest = requestChannel.receive()
   
@@ -284,12 +274,12 @@ override fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): De
 Using `send()` and `close()` on `SendChannel<T>`.
 
 ```kotlin
-val (requests: SendChannel<GreetRequest>, response: Deferred<GreetReply>) = stub.greetClientStream()
-requests.send( /* GreetRequest */ )
-requests.send( /* GreetRequest */ )
-requests.close() //  don't forget to close the send channel
+val call: ManyToOneCall<GreetRequest, GreetReply> = stub.greetClientStream()
+call.send( /* GreetRequest */ )
+call.send( /* GreetRequest */ )
+call.close() //  don't forget to close the send channel
 
-val responseMessage = response.await()
+val responseMessage = call.await()
 ```
 
 ### Unary request, Streaming response
@@ -301,7 +291,7 @@ val responseMessage = response.await()
 Using [`produce`] coroutine builder and `send` to return a stream of messages.
 
 ```kotlin
-override fun greetServerStream(request: GreetRequest): ReceiveChannel<GreetReply> = GlobalScope.produce {
+override fun greetServerStream(request: GreetRequest): ReceiveChannel<GreetReply> = produce {
   send( /* GreetReply message */ )
   send( /* GreetReply message */ )
   // ...
@@ -333,7 +323,7 @@ for (responseMessage in responses) {
 Using [`produce`] coroutine builder and `send` to return a stream of messages. Receiving messages from a `ReceiveChannel<T>`.
 
 ```kotlin
-override fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>): ReceiveChannel<GreetReply> = GlobalScope.produce {
+override fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>): ReceiveChannel<GreetReply> = produce {
   // receive request messages
   val firstRequest = requestChannel.receive()
   send( /* GreetReply message */ )
@@ -350,19 +340,17 @@ override fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>): R
 Using both a `SendChannel<T>` and a `ReceiveChannel<T>` to interact with the call.
 
 ```kotlin
-val (requests: SendChannel<GreetRequest>, responses: ReceiveChannel<GreetReply>) = stub.greetBidirectional()
-val responsePrinter = GlobalScope.launch {
-  for (responseMessage in responses) {
+val call: ManyToManyCall<GreetRequest, GreetReply> = stub.greetBidirectional()
+launch {
+  for (responseMessage in call) {
     log.info(responseMessage)
   }
   log.info("no more replies")
 }
 
-requests.send( /* GreetRequest */ )
-requests.send( /* GreetRequest */ )
-requests.close() //  don't forget to close the send channel
-
-responsePrinter.join() // wait for printer coroutine to finish
+call.send( /* GreetRequest */ )
+call.send( /* GreetRequest */ )
+call.close() //  don't forget to close the send channel
 ```
 
 
