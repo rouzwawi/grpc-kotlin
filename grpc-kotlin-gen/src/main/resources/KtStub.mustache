@@ -132,7 +132,7 @@ object {{className}} {
         {{/isManyOutput}}
         {{#isManyOutput}}
         {{! == unary req, streaming resp == }}
-        open fun {{methodName}}(request: {{inputType}}): ReceiveChannel<{{outputType}}> {
+        open suspend fun {{methodName}}(request: {{inputType}}): ReceiveChannel<{{outputType}}> {
             throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
         }
 
@@ -171,7 +171,7 @@ object {{className}} {
         {{/isManyOutput}}
         {{#isManyOutput}}
         {{! == streaming req, streaming resp == }}
-        open fun {{methodName}}(requestChannel: ReceiveChannel<{{inputType}}>): ReceiveChannel<{{outputType}}> {
+        open suspend fun {{methodName}}(requestChannel: ReceiveChannel<{{inputType}}>): ReceiveChannel<{{outputType}}> {
             throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
         }
 

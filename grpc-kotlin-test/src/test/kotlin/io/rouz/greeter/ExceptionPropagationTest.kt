@@ -142,7 +142,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
             throw notFound()
         }
 
-        override fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
+        override suspend fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
             throw notFound()
         }
 
@@ -150,7 +150,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
             throw notFound()
         }
 
-        override fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
+        override suspend fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
             throw notFound()
         }
 
@@ -167,7 +167,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
             throw broke()
         }
 
-        override fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
+        override suspend fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
             throw broke()
         }
 
@@ -175,7 +175,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
             throw broke()
         }
 
-        override fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
+        override suspend fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
             throw broke()
         }
 
