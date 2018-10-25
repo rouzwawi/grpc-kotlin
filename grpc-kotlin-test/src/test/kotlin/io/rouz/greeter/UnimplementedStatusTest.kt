@@ -80,5 +80,5 @@ class UnimplementedStatusTest : GrpcTestBase() {
         }
     }
 
-    class UnimplementedGreeter : GreeterGrpcKt.GreeterImplBase()
+    class UnimplementedGreeter : GreeterGrpcKt.GreeterImplBase(SilenceExceptions())
 }

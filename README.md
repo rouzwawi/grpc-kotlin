@@ -121,7 +121,7 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
         .build()
   }
 
-  override suspend fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
+  override suspend fun ProducerScope<GreetReply>.greetServerStream(request: GreetRequest) {
     send(GreetReply.newBuilder()
         .setReply("Hello ${request.greeting}!")
         .build())
@@ -142,7 +142,7 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
         .build()
   }
 
-  override suspend fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
+  override suspend fun ProducerScope<GreetReply>.greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) {
     var count = 0
 
     for (request in requestChannel) {
@@ -291,12 +291,14 @@ val responseMessage = call.await()
 Using [`produce`] coroutine builder and `send` to return a stream of messages.
 
 ```kotlin
-override suspend fun greetServerStream(request: GreetRequest): ReceiveChannel<GreetReply> = produce {
+override suspend fun ProducerScope<GreetReply>.greetServerStream(request: GreetRequest) {
   send( /* GreetReply message */ )
   send( /* GreetReply message */ )
   // ...
 }
 ```
+
+Note that `close()` or `close(Throwable)` should not be used, see [Exception handling](#exception-handling).
 
 #### Client
 
@@ -323,7 +325,7 @@ for (responseMessage in responses) {
 Using [`produce`] coroutine builder and `send` to return a stream of messages. Receiving messages from a `ReceiveChannel<T>`.
 
 ```kotlin
-override suspend fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>): ReceiveChannel<GreetReply> = produce {
+override suspend fun ProducerScope<GreetReply>.greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) {
   // receive request messages
   val firstRequest = requestChannel.receive()
   send( /* GreetReply message */ )
@@ -334,6 +336,8 @@ override suspend fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequ
   // ...
 }
 ```
+
+Note that `close()` or `close(Throwable)` should not be used, see [Exception handling](#exception-handling).
 
 #### Client
 
@@ -353,11 +357,24 @@ call.send( /* GreetRequest */ )
 call.close() //  don't forget to close the send channel
 ```
 
+## Exception handling
+
+The generated server code follows the standard exception propagation for Kotlin coroutines as described
+in the [Exception handling] documentation. This means that it's safe to throw exceptions from within
+the server implementation code. These will propagate up the coroutine scope and be translated to
+`responseObserver.onError(Throwable)` calls. The preferred way to respond with a status code is to
+throw a `StatusException`.
+
+Note that you should not call `close(Throwable)` or `close()` from within the `ProducerScope<T>`
+handlers as the producer will automatically be closed when all sub-contexts are closed (or if an
+exception is thrown).
+
 
 [protoc]: https://www.xolstice.org/protobuf-maven-plugin/examples/protoc-plugin.html
 [`suspend`]: https://kotlinlang.org/docs/reference/coroutines-overview.html
 [coroutine primitives]: https://github.com/Kotlin/kotlinx.coroutines
 [core coroutine primitives]: https://github.com/Kotlin/kotlinx.coroutines/blob/master/core/kotlinx-coroutines-core/README.md
+[Exception handling]: https://kotlinlang.org/docs/reference/coroutines/exception-handling.html
 [`Channel`]: https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental.channels/-channel/index.html
 [`Deferred`]: https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental/-deferred/index.html
 [`async`]: https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental/async.html

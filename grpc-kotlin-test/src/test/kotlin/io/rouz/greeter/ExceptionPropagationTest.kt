@@ -23,9 +23,8 @@ package io.rouz.greeter
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import kotlinx.coroutines.experimental.CoroutineExceptionHandler
-import kotlinx.coroutines.experimental.Dispatchers
+import kotlinx.coroutines.experimental.channels.ProducerScope
 import kotlinx.coroutines.experimental.channels.ReceiveChannel
-import kotlinx.coroutines.experimental.channels.produce
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Rule
 import org.junit.Test
@@ -45,7 +44,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
         val stub = startServer(StatusThrowingGreeter())
 
         expect.expect(StatusRuntimeException::class.java)
-        expect.expectMessage("NOT_FOUND: neh")
+        expect.expectMessage("NOT_FOUND: uni")
 
         runBlocking {
             stub.greet(req("joe"))
@@ -57,7 +56,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
         val stub = startServer(StatusThrowingGreeter())
 
         expect.expect(StatusRuntimeException::class.java)
-        expect.expectMessage("NOT_FOUND: neh")
+        expect.expectMessage("NOT_FOUND: sstream")
 
         runBlocking {
             stub.greetServerStream(req("joe")).receive()
@@ -69,7 +68,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
         val stub = startServer(StatusThrowingGreeter())
 
         expect.expect(StatusRuntimeException::class.java)
-        expect.expectMessage("NOT_FOUND: neh")
+        expect.expectMessage("NOT_FOUND: cstream")
 
         runBlocking {
             stub.greetClientStream().await()
@@ -81,7 +80,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
         val stub = startServer(StatusThrowingGreeter())
 
         expect.expect(StatusRuntimeException::class.java)
-        expect.expectMessage("NOT_FOUND: neh")
+        expect.expectMessage("NOT_FOUND: bidi")
 
         runBlocking {
             stub.greetBidirectional().receive()
@@ -136,38 +135,40 @@ class ExceptionPropagationTest : GrpcTestBase() {
         }
     }
 
-    private class StatusThrowingGreeter : GreeterGrpcKt.GreeterImplBase() {
-
-        override suspend fun greet(request: GreetRequest): GreetReply {
-            throw notFound()
+    private class StatusThrowingGreeter : GreeterGrpcKt.GreeterImplBase(
+        CoroutineExceptionHandler { c, t ->
+            println("caught $t in $c")
         }
-
-        override suspend fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
-            throw notFound()
-        }
-
-        override suspend fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): GreetReply {
-            throw notFound()
-        }
-
-        override suspend fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
-            throw notFound()
-        }
-
-        private fun notFound(): StatusRuntimeException {
-            return Status.NOT_FOUND.withDescription("neh").asRuntimeException()
-        }
-    }
-
-    private class GenericThrowingGreeter : GreeterGrpcKt.GreeterImplBase(
-        Dispatchers.Default + CoroutineExceptionHandler { _, _ -> /* shh */ }
     ) {
 
         override suspend fun greet(request: GreetRequest): GreetReply {
+            throw notFound("uni")
+        }
+
+        override suspend fun ProducerScope<GreetReply>.greetServerStream(request: GreetRequest) {
+            throw notFound("sstream")
+        }
+
+        override suspend fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): GreetReply {
+            throw notFound("cstream")
+        }
+
+        override suspend fun ProducerScope<GreetReply>.greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) {
+            throw notFound("bidi")
+        }
+
+        private fun notFound(description: String): StatusRuntimeException {
+            return Status.NOT_FOUND.withDescription(description).asRuntimeException()
+        }
+    }
+
+    private class GenericThrowingGreeter : GreeterGrpcKt.GreeterImplBase(SilenceExceptions()) {
+
+        override suspend fun greet(request: GreetRequest): GreetReply {
             throw broke()
         }
 
-        override suspend fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
+        override suspend fun ProducerScope<GreetReply>.greetServerStream(request: GreetRequest) {
             throw broke()
         }
 
@@ -175,7 +176,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
             throw broke()
         }
 
-        override suspend fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
+        override suspend fun ProducerScope<GreetReply>.greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) {
             throw broke()
         }
 

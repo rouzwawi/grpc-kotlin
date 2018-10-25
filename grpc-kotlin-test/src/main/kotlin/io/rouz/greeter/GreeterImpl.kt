@@ -20,8 +20,8 @@
 
 package io.rouz.greeter
 
+import kotlinx.coroutines.experimental.channels.ProducerScope
 import kotlinx.coroutines.experimental.channels.ReceiveChannel
-import kotlinx.coroutines.experimental.channels.produce
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
@@ -44,7 +44,7 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
             .build()
     }
 
-    override suspend fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
+    override suspend fun ProducerScope<GreetReply>.greetServerStream(request: GreetRequest) {
         log.info(request.greeting)
 
         send(
@@ -72,7 +72,7 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
             .build()
     }
 
-    override suspend fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
+    override suspend fun ProducerScope<GreetReply>.greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) {
         var count = 0
 
         for (request in requestChannel) {

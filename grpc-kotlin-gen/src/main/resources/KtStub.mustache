@@ -4,31 +4,13 @@ package {{packageName}}
 
 import {{packageName}}.{{serviceName}}Grpc.*
 
-import io.grpc.BindableService
-import io.grpc.CallOptions
-import io.grpc.Channel
-import io.grpc.MethodDescriptor
-import io.grpc.ServerServiceDefinition
-import io.grpc.Status
-import io.grpc.StatusException
-import io.grpc.StatusRuntimeException
-import io.grpc.stub.AbstractStub
-import io.grpc.stub.ServerCalls
-import io.grpc.stub.StreamObserver
+import io.grpc.*
+import io.grpc.stub.*
 
-import kotlinx.coroutines.experimental.CompletableDeferred
-import kotlinx.coroutines.experimental.CoroutineScope
-import kotlinx.coroutines.experimental.Deferred
-import kotlinx.coroutines.experimental.Dispatchers
-import kotlinx.coroutines.experimental.GlobalScope
 import kotlinx.coroutines.experimental.channels.Channel as KtChannel
-import kotlinx.coroutines.experimental.channels.ReceiveChannel
-import kotlinx.coroutines.experimental.channels.SendChannel
-import kotlinx.coroutines.experimental.channels.consumeEach
-import kotlinx.coroutines.experimental.launch
-import kotlin.coroutines.experimental.Continuation
-import kotlin.coroutines.experimental.CoroutineContext
-import kotlin.coroutines.experimental.suspendCoroutine
+import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.experimental.channels.*
+import kotlin.coroutines.experimental.*
 
 {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
 @javax.annotation.Generated(
@@ -132,7 +114,7 @@ object {{className}} {
         {{/isManyOutput}}
         {{#isManyOutput}}
         {{! == unary req, streaming resp == }}
-        open suspend fun {{methodName}}(request: {{inputType}}): ReceiveChannel<{{outputType}}> {
+        open suspend fun ProducerScope<{{outputType}}>.{{methodName}}(request: {{inputType}}) {
             throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
         }
 
@@ -141,10 +123,11 @@ object {{className}} {
             responseObserver: StreamObserver<{{outputType}}>
         ) {
             launch {
-                tryCatchingStatus(responseObserver) {
-                    {{methodName}}(request)
-                        .consumeEach { onNext(it) }
-                }
+                produce {
+                    tryCatchingStatus(responseObserver) {
+                        {{methodName}}(request)
+                    }
+                }.consumeEach { responseObserver.onNext(it) }
             }
         }
         {{/isManyOutput}}
@@ -171,7 +154,7 @@ object {{className}} {
         {{/isManyOutput}}
         {{#isManyOutput}}
         {{! == streaming req, streaming resp == }}
-        open suspend fun {{methodName}}(requestChannel: ReceiveChannel<{{inputType}}>): ReceiveChannel<{{outputType}}> {
+        open suspend fun ProducerScope<{{outputType}}>.{{methodName}}(requestChannel: ReceiveChannel<{{inputType}}>) {
             throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
         }
 
@@ -180,10 +163,11 @@ object {{className}} {
         ): StreamObserver<{{inputType}}> {
             val requestChannel = StreamObserverChannel<{{inputType}}>()
             launch {
-                tryCatchingStatus(responseObserver) {
-                    {{methodName}}(requestChannel)
-                        .consumeEach { onNext(it) }
-                }
+                produce {
+                    tryCatchingStatus(responseObserver) {
+                        {{methodName}}(requestChannel)
+                    }
+                }.consumeEach { responseObserver.onNext(it) }
             }
             return requestChannel
         }
@@ -215,23 +199,32 @@ object {{className}} {
             )
     }
 
+    private fun <E> handleException(t: Throwable?, responseObserver: StreamObserver<E>) {
+        when (t) {
+            null -> Unit
+            //is CancellationException -> handleException(t.cause, responseObserver)
+            is StatusException, is StatusRuntimeException -> responseObserver.onError(t)
+            is RuntimeException -> {
+                responseObserver.onError(Status.UNKNOWN.asRuntimeException())
+                throw t
+            }
+            is Exception -> {
+                responseObserver.onError(Status.UNKNOWN.asException())
+                throw t
+            }
+            else -> {
+                responseObserver.onError(Status.INTERNAL.asException())
+                throw t
+            }
+        }
+    }
+
     private suspend fun <E> tryCatchingStatus(responseObserver: StreamObserver<E>, body: suspend StreamObserver<E>.() -> Unit) {
         try {
             responseObserver.body()
             responseObserver.onCompleted()
-        } catch (t: StatusException) {
-            responseObserver.onError(t)
-        } catch (t: StatusRuntimeException) {
-            responseObserver.onError(t)
-        } catch (t: RuntimeException) {
-            responseObserver.onError(Status.UNKNOWN.asRuntimeException())
-            throw t
-        } catch (t: Exception) {
-            responseObserver.onError(Status.UNKNOWN.asException())
-            throw t
         } catch (t: Throwable) {
-            responseObserver.onError(Status.INTERNAL.asException())
-            throw t
+            handleException(t, responseObserver)
         }
     }
 

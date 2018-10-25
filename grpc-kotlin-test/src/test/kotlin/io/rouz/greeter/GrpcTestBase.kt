@@ -25,7 +25,9 @@ import io.grpc.inprocess.InProcessServerBuilder
 import io.grpc.testing.GrpcCleanupRule
 import io.rouz.greeter.GreeterGrpcKt.GreeterImplBase
 import io.rouz.greeter.GreeterGrpcKt.GreeterKtStub
+import kotlinx.coroutines.experimental.CoroutineExceptionHandler
 import org.junit.Rule
+import kotlin.coroutines.experimental.CoroutineContext
 
 open class GrpcTestBase {
 
@@ -55,5 +57,15 @@ open class GrpcTestBase {
 
     fun req(greeting: String): GreetRequest {
         return GreetRequest.newBuilder().setGreeting(greeting).build()
+    }
+
+    class SilenceExceptions : CoroutineExceptionHandler {
+
+        override val key: CoroutineContext.Key<*>
+            get() = CoroutineExceptionHandler.Key
+
+        override fun handleException(context: CoroutineContext, exception: Throwable) {
+            /* shh */
+        }
     }
 }
