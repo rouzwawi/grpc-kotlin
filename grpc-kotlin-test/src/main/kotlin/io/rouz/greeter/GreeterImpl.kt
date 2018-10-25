@@ -31,7 +31,8 @@ import mu.KotlinLogging
  * Implementation of coroutine-based gRPC service defined in greeter.proto
  */
 class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
-    coroutineContext = newFixedThreadPoolContext(4, "server-pool")
+    coroutineContext = newFixedThreadPoolContext(4, "server-pool"),
+    sendChannelCapacity = 4
 ) {
 
     private val log = KotlinLogging.logger("server")
