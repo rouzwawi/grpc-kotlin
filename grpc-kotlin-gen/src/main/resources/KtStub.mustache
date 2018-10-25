@@ -87,7 +87,8 @@ object {{className}} {
 
     {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
     abstract class {{serviceName}}ImplBase(
-        override val coroutineContext: CoroutineContext = Dispatchers.Default
+        override val coroutineContext: CoroutineContext = Dispatchers.Default,
+        val sendChannelCapacity: Int = KtChannel.UNLIMITED
     ) : BindableService, CoroutineScope {
 
         {{#methods}}
@@ -125,8 +126,11 @@ object {{className}} {
             launch {
                 supervisorScope {
                     tryCatchingStatus(responseObserver) {
-                        produce { {{methodName}}(request) }
-                            .consumeEach { onNext(it) }
+                        produce(capacity = sendChannelCapacity) {
+                            {{methodName}}(request)
+                        }.consumeEach {
+                            onNext(it)
+                        }
                     }
                 }
             }
@@ -166,8 +170,11 @@ object {{className}} {
             launch {
                 supervisorScope {
                     tryCatchingStatus(responseObserver) {
-                        produce { {{methodName}}(requestChannel) }
-                            .consumeEach { onNext(it) }
+                        produce(capacity = sendChannelCapacity) {
+                            {{methodName}}(requestChannel)
+                        }.consumeEach {
+                            onNext(it)
+                        }
                     }
                 }
             }
