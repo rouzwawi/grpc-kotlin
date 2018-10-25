@@ -18,7 +18,7 @@
     <dependency>
       <groupId>com.salesforce.servicelibs</groupId>
       <artifactId>jprotoc</artifactId>
-      <version>0.7.1</version>
+      <version>0.8.1</version>
     </dependency>
 
     <!-- scope : test -->
