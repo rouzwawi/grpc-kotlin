@@ -79,7 +79,7 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
             val n = count++
             log.info("$n ${request.greeting}")
             launch {
-                delay(1000)
+                delay(100)
                 send(
                     GreetReply.newBuilder()
                         .setReply("Yo #$n ${request.greeting}")

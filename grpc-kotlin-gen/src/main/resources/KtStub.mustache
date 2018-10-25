@@ -123,11 +123,12 @@ object {{className}} {
             responseObserver: StreamObserver<{{outputType}}>
         ) {
             launch {
-                produce {
+                supervisorScope {
                     tryCatchingStatus(responseObserver) {
-                        {{methodName}}(request)
+                        produce { {{methodName}}(request) }
+                            .consumeEach { onNext(it) }
                     }
-                }.consumeEach { responseObserver.onNext(it) }
+                }
             }
         }
         {{/isManyOutput}}
@@ -163,11 +164,12 @@ object {{className}} {
         ): StreamObserver<{{inputType}}> {
             val requestChannel = StreamObserverChannel<{{inputType}}>()
             launch {
-                produce {
+                supervisorScope {
                     tryCatchingStatus(responseObserver) {
-                        {{methodName}}(requestChannel)
+                        produce { {{methodName}}(requestChannel) }
+                            .consumeEach { onNext(it) }
                     }
-                }.consumeEach { responseObserver.onNext(it) }
+                }
             }
             return requestChannel
         }
@@ -201,8 +203,8 @@ object {{className}} {
 
     private fun <E> handleException(t: Throwable?, responseObserver: StreamObserver<E>) {
         when (t) {
-            null -> Unit
-            //is CancellationException -> handleException(t.cause, responseObserver)
+            null -> return
+            is CancellationException -> handleException(t.cause, responseObserver)
             is StatusException, is StatusRuntimeException -> responseObserver.onError(t)
             is RuntimeException -> {
                 responseObserver.onError(Status.UNKNOWN.asRuntimeException())
