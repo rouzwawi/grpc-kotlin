@@ -41,8 +41,7 @@ open class GrpcTestBase {
     private val serverName = InProcessServerBuilder.generateName()
 
     protected val seenExceptions = mutableListOf<Throwable>()
-    protected val collectExceptions = CoroutineExceptionHandler {
-            _, t ->
+    protected val collectExceptions = CoroutineExceptionHandler { _, t ->
         seenExceptions += t
         log.info("Caught exception in exception handler: $t")
     }

@@ -20,6 +20,7 @@
 
 package io.rouz.greeter
 
+import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.channels.ProducerScope
 import kotlinx.coroutines.experimental.channels.ReceiveChannel
 import kotlinx.coroutines.experimental.delay
@@ -33,8 +34,10 @@ class DelayedThrowingStatusExceptionTest : StatusExceptionTestBase() {
     private inner class StatusThrowingGreeter : GreeterGrpcKt.GreeterImplBase(collectExceptions) {
 
         override suspend fun greet(request: GreetRequest): GreetReply {
-            delay(10)
-            throw notFound("uni")
+            async {
+                delay(10)
+                throw notFound("uni")
+            }.await()
         }
 
         override suspend fun ProducerScope<GreetReply>.greetServerStream(request: GreetRequest) {
@@ -45,8 +48,10 @@ class DelayedThrowingStatusExceptionTest : StatusExceptionTestBase() {
         }
 
         override suspend fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): GreetReply {
-            delay(10)
-            throw notFound("cstream")
+            async {
+                delay(10)
+                throw notFound("cstream")
+            }.await()
         }
 
         override suspend fun ProducerScope<GreetReply>.greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) {
