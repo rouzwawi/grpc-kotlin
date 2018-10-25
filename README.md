@@ -99,12 +99,19 @@ protobuf {
 ### Server
 
 After compilation, you'll find the generated Kotlin stubs in an `object` named `GreeterGrpcKt`. Both
-the service base class and client stub will use `suspend` and `ReceiveChannel<T>` instead of
-the typical `StreamObserver<T>` interfaces.
+the service base class and client stub will use `suspend` and `Channel<T>` instead of the typical
+`StreamObserver<T>` interfaces.
 
-Here's an example server that demonstrates how each type of endpoint is implemented, either as a
-[`suspend`] function for unary responses or using a [core coroutine primitives] like `produce` to
-create a `ReceiveChannel`. Other top level primitives like `delay` are available for use too. 
+All functions have the [`suspend`] modifier so they can call into any suspending code, including the
+[core coroutine primitives] like `delay` and `async`.
+
+All the server streaming calls are extensions to `ProducerScope<TReply>` so they can `send()`
+messages to the caller.
+
+All client streaming calls receive an argument of `ReceiveChannel<TRequest>` where they can `receive()`
+messages from the caller.
+
+Here's an example server that demonstrates how each type of endpoint is implemented.
 
 ```kotlin
 import kotlinx.coroutines.experimental.*
@@ -112,15 +119,17 @@ import kotlinx.coroutines.experimental.channels.ReceiveChannel
 import kotlinx.coroutines.experimental.channels.produce
 
 class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
-    coroutineContext = newFixedThreadPoolContext(4, "server-pool")
+  coroutineContext = newFixedThreadPoolContext(4, "server-pool")
 ) {
 
+  // unary rpc
   override suspend fun greet(request: GreetRequest): GreetReply {
     return GreetReply.newBuilder()
         .setReply("Hello " + request.greeting)
         .build()
   }
 
+  // server streaming rpc
   override suspend fun ProducerScope<GreetReply>.greetServerStream(request: GreetRequest) {
     send(GreetReply.newBuilder()
         .setReply("Hello ${request.greeting}!")
@@ -130,6 +139,7 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
         .build())
   }
 
+  // client streaming rpc
   override suspend fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): GreetReply {
     val greetings = mutableListOf<String>()
 
@@ -142,6 +152,7 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
         .build()
   }
 
+  // bidirectional rpc
   override suspend fun ProducerScope<GreetReply>.greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) {
     var count = 0
 
@@ -160,8 +171,8 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
 
 ### Client
 
-The generated client stub is also fully implemented using `suspend`ing functions, `Deferred` and
-`SendChannel`.
+The generated client stub is also fully implemented using `suspend` functions, `Deferred<TReply>`
+and `SendChannel<TRequest>`.
 
 ```kotlin
 import io.grpc.ManagedChannelBuilder
@@ -288,7 +299,7 @@ val responseMessage = call.await()
 
 #### Service
 
-Using [`produce`] coroutine builder and `send` to return a stream of messages.
+Using `send()` on `ProducerScope<T>` to send a stream of messages.
 
 ```kotlin
 override suspend fun ProducerScope<GreetReply>.greetServerStream(request: GreetRequest) {
@@ -322,7 +333,7 @@ for (responseMessage in responses) {
 
 #### Service
 
-Using [`produce`] coroutine builder and `send` to return a stream of messages. Receiving messages from a `ReceiveChannel<T>`.
+Using `send()` on `ProducerScope<T>` to send a stream of messages. Receiving messages from a `ReceiveChannel<T>`.
 
 ```kotlin
 override suspend fun ProducerScope<GreetReply>.greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) {
