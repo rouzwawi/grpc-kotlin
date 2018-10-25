@@ -25,15 +25,26 @@ import io.grpc.inprocess.InProcessServerBuilder
 import io.grpc.testing.GrpcCleanupRule
 import io.rouz.greeter.GreeterGrpcKt.GreeterImplBase
 import io.rouz.greeter.GreeterGrpcKt.GreeterKtStub
+import kotlinx.coroutines.experimental.CoroutineExceptionHandler
+import mu.KLogger
+import mu.KotlinLogging
 import org.junit.Rule
 
 open class GrpcTestBase {
+
+    val log = KotlinLogging.logger("GreeterImplBase")
 
     @Rule
     @JvmField
     val grpcCleanup = GrpcCleanupRule()
 
     private val serverName = InProcessServerBuilder.generateName()
+
+    protected val seenExceptions = mutableListOf<Throwable>()
+    protected val collectExceptions = CoroutineExceptionHandler { _, t ->
+        seenExceptions += t
+        log.info("Caught exception in exception handler: $t")
+    }
 
     protected fun startServer(service: GreeterImplBase): GreeterKtStub {
         grpcCleanup.register(

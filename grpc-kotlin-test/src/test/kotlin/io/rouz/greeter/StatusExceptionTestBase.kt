@@ -20,36 +20,51 @@
 
 package io.rouz.greeter
 
+import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
 
-class UnimplementedStatusTest : GrpcTestBase() {
+abstract class StatusExceptionTestBase : GrpcTestBase() {
 
     @Rule
     @JvmField
     val expect = ExpectedException.none()
 
+    abstract val service: GreeterGrpcKt.GreeterImplBase
+
     @Test
-    fun unaryUnimplemented() {
-        val stub = startServer(UnimplementedGreeter())
+    fun unaryStatus() {
+        val stub = startServer(service)
 
         expect.expect(StatusRuntimeException::class.java)
-        expect.expectMessage("UNIMPLEMENTED: Method io.rouz.greeter.Greeter/Greet is unimplemented")
+        expect.expectMessage("NOT_FOUND: uni")
 
         runBlocking {
-            stub.greet(req("anyone there?"))
+            stub.greet(req("joe"))
         }
     }
 
     @Test
-    fun clientStreamingUnimplemented() {
-        val stub = startServer(UnimplementedGreeter())
+    fun serverStreamingStatus() {
+        val stub = startServer(service)
 
         expect.expect(StatusRuntimeException::class.java)
-        expect.expectMessage("UNIMPLEMENTED: Method io.rouz.greeter.Greeter/GreetClientStream is unimplemented")
+        expect.expectMessage("NOT_FOUND: sstream")
+
+        runBlocking {
+            stub.greetServerStream(req("joe")).receive()
+        }
+    }
+
+    @Test
+    fun clientStreamingStatus() {
+        val stub = startServer(service)
+
+        expect.expect(StatusRuntimeException::class.java)
+        expect.expectMessage("NOT_FOUND: cstream")
 
         runBlocking {
             stub.greetClientStream().await()
@@ -57,28 +72,18 @@ class UnimplementedStatusTest : GrpcTestBase() {
     }
 
     @Test
-    fun serverStreamingUnimplemented() {
-        val stub = startServer(UnimplementedGreeter())
+    fun bidirectionalStatus() {
+        val stub = startServer(service)
 
         expect.expect(StatusRuntimeException::class.java)
-        expect.expectMessage("UNIMPLEMENTED: Method io.rouz.greeter.Greeter/GreetServerStream is unimplemented")
-
-        runBlocking {
-            stub.greetServerStream(req("anyone there?")).receive()
-        }
-    }
-
-    @Test
-    fun bidirectionalUnimplemented() {
-        val stub = startServer(UnimplementedGreeter())
-
-        expect.expect(StatusRuntimeException::class.java)
-        expect.expectMessage("UNIMPLEMENTED: Method io.rouz.greeter.Greeter/GreetBidirectional is unimplemented")
+        expect.expectMessage("NOT_FOUND: bidi")
 
         runBlocking {
             stub.greetBidirectional().receive()
         }
     }
 
-    inner class UnimplementedGreeter : GreeterGrpcKt.GreeterImplBase(collectExceptions)
+    protected fun notFound(description: String): StatusRuntimeException {
+        return Status.NOT_FOUND.withDescription(description).asRuntimeException()
+    }
 }
