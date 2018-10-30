@@ -46,7 +46,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class GrpcKotlinGenerator extends Generator {
 
@@ -60,7 +59,7 @@ public class GrpcKotlinGenerator extends Generator {
   }
 
   @Override
-  public Stream<CodeGeneratorResponse.File> generate(CodeGeneratorRequest request)
+  public List<CodeGeneratorResponse.File> generateFiles(CodeGeneratorRequest request)
       throws GeneratorException {
     final ProtoTypeMap typeMap = ProtoTypeMap.of(request.getProtoFileList());
 
@@ -69,9 +68,7 @@ public class GrpcKotlinGenerator extends Generator {
         .collect(Collectors.toList());
 
     List<Context> services = findServices(protosToGenerate, typeMap);
-    List<PluginProtos.CodeGeneratorResponse.File> files = generateFiles(services);
-    return files.stream();
-
+    return generateFiles(services);
   }
 
   private List<Context> findServices(List<FileDescriptorProto> protos, ProtoTypeMap typeMap) {
