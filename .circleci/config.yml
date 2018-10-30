@@ -30,13 +30,10 @@ jobs:
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
 
-      - run: mvn dependency:go-offline
+      # run tests!
+      - run: mvn verify
 
       - save_cache:
           paths:
             - ~/.m2
           key: v1-dependencies-{{ checksum "pom.xml" }}-{{ checksum "grpc-kotlin-gen/pom.xml" }}-{{ checksum "grpc-kotlin-test/pom.xml" }}
-
-      # run tests!
-      - run: mvn verify
-
