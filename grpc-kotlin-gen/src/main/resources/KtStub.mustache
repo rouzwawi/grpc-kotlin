@@ -200,12 +200,7 @@ object {{className}} {
 
     private fun unimplemented(methodDescriptor: MethodDescriptor<*, *>): Status {
         return Status.UNIMPLEMENTED
-            .withDescription(
-                String.format(
-                    "Method %s is unimplemented",
-                    methodDescriptor.fullMethodName
-                )
-            )
+            .withDescription("Method ${methodDescriptor.fullMethodName} is unimplemented")
     }
 
     private fun <E> handleException(t: Throwable?, responseObserver: StreamObserver<E>) {
