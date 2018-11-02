@@ -20,17 +20,20 @@
 
 package io.rouz.greeter
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
-import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@UseExperimental(ExperimentalCoroutinesApi::class)
 class DelayedThrowingStatusExceptionTest : StatusExceptionTestBase() {
 
     override val service: GreeterGrpcKt.GreeterImplBase
         get() = StatusThrowingGreeter()
 
+    @UseExperimental(ExperimentalCoroutinesApi::class)
     private inner class StatusThrowingGreeter : GreeterGrpcKt.GreeterImplBase(collectExceptions) {
 
         override suspend fun greet(request: GreetRequest): GreetReply {
@@ -40,21 +43,21 @@ class DelayedThrowingStatusExceptionTest : StatusExceptionTestBase() {
             }.await()
         }
 
-        override suspend fun ProducerScope<GreetReply>.greetServerStream(request: GreetRequest) {
+        override suspend fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
             launch {
                 delay(10)
                 throw notFound("sstream")
             }
         }
 
-        override suspend fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): GreetReply {
+        override suspend fun greetClientStream(requests: ReceiveChannel<GreetRequest>): GreetReply {
             async {
                 delay(10)
                 throw notFound("cstream")
             }.await()
         }
 
-        override suspend fun ProducerScope<GreetReply>.greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) {
+        override suspend fun greetBidirectional(requests: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
             launch {
                 delay(10)
                 throw notFound("bidi")

@@ -7,10 +7,10 @@ import {{packageName}}.{{serviceName}}Grpc.*
 import io.grpc.*
 import io.grpc.stub.*
 
-import kotlinx.coroutines.channels.Channel as KtChannel
+import kotlin.coroutines.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
-import kotlin.coroutines.*
+import kotlinx.coroutines.channels.Channel as KtChannel
 
 {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
 @javax.annotation.Generated(
@@ -115,7 +115,7 @@ object {{className}} {
         {{/isManyOutput}}
         {{#isManyOutput}}
         {{! == unary req, streaming resp == }}
-        open suspend fun ProducerScope<{{outputType}}>.{{methodName}}(request: {{inputType}}) {
+        open suspend fun {{methodName}}(request: {{inputType}}): ReceiveChannel<{{outputType}}> {
             throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
         }
 
@@ -124,13 +124,10 @@ object {{className}} {
             responseObserver: StreamObserver<{{outputType}}>
         ) {
             launch {
-                supervisorScope {
-                    tryCatchingStatus(responseObserver) {
-                        produce<{{outputType}}>(capacity = sendChannelCapacity) {
-                            {{methodName}}(request)
-                        }.consumeEach {
-                            onNext(it)
-                        }
+                tryCatchingStatus(responseObserver) {
+                    val responses = {{methodName}}(request)
+                    for (response in responses) {
+                      onNext(response)
                     }
                 }
             }
@@ -140,45 +137,42 @@ object {{className}} {
         {{#isManyInput}}
         {{^isManyOutput}}
         {{! == streaming req, unary resp == }}
-        open suspend fun {{methodName}}(requestChannel: ReceiveChannel<{{inputType}}>): {{outputType}} {
+        open suspend fun {{methodName}}(requests: ReceiveChannel<{{inputType}}>): {{outputType}} {
             throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
         }
 
         internal fun {{methodName}}Internal(
             responseObserver: StreamObserver<{{outputType}}>
         ): StreamObserver<{{inputType}}> {
-            val requestChannel = StreamObserverChannel<{{inputType}}>()
+            val requests = StreamObserverChannel<{{inputType}}>()
             launch {
                 tryCatchingStatus(responseObserver) {
-                    val response = {{methodName}}(requestChannel)
+                    val response = {{methodName}}(requests)
                     onNext(response)
                 }
             }
-            return requestChannel
+            return requests
         }
         {{/isManyOutput}}
         {{#isManyOutput}}
         {{! == streaming req, streaming resp == }}
-        open suspend fun ProducerScope<{{outputType}}>.{{methodName}}(requestChannel: ReceiveChannel<{{inputType}}>) {
+        open suspend fun {{methodName}}(requests: ReceiveChannel<{{inputType}}>): ReceiveChannel<{{outputType}}> {
             throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
         }
 
         internal fun {{methodName}}Internal(
             responseObserver: StreamObserver<{{outputType}}>
         ): StreamObserver<{{inputType}}> {
-            val requestChannel = StreamObserverChannel<{{inputType}}>()
+            val requests = StreamObserverChannel<{{inputType}}>()
             launch {
-                supervisorScope {
-                    tryCatchingStatus(responseObserver) {
-                        produce<{{outputType}}>(capacity = sendChannelCapacity) {
-                            {{methodName}}(requestChannel)
-                        }.consumeEach {
-                            onNext(it)
-                        }
+                tryCatchingStatus(responseObserver) {
+                    val responses = {{methodName}}(requests)
+                    for (response in responses) {
+                        onNext(response)
                     }
                 }
             }
-            return requestChannel
+            return requests
         }
         {{/isManyOutput}}
         {{/isManyInput}}
@@ -274,7 +268,7 @@ object {{className}} {
     ) : StreamObserver<E>, Deferred<E> by deferred {
 
         override fun onNext(value: E) { deferred.complete(value) }
-        override fun onError(t: Throwable) { deferred.cancel(t) }
+        override fun onError(t: Throwable) { deferred.completeExceptionally(t) }
         override fun onCompleted() { /* nothing */ }
     }
 

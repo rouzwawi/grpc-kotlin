@@ -20,29 +20,31 @@
 
 package io.rouz.greeter
 
-import kotlinx.coroutines.channels.ProducerScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.produce
 
 class ClosingStatusExceptionTest : StatusExceptionTestBase() {
 
     override val service: GreeterGrpcKt.GreeterImplBase
         get() = StatusThrowingGreeter()
 
+    @UseExperimental(ExperimentalCoroutinesApi::class)
     private inner class StatusThrowingGreeter : GreeterGrpcKt.GreeterImplBase(collectExceptions) {
 
         override suspend fun greet(request: GreetRequest): GreetReply {
             throw notFound("uni")
         }
 
-        override suspend fun ProducerScope<GreetReply>.greetServerStream(request: GreetRequest) {
+        override suspend fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
             close(notFound("sstream"))
         }
 
-        override suspend fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): GreetReply {
+        override suspend fun greetClientStream(requests: ReceiveChannel<GreetRequest>): GreetReply {
             throw notFound("cstream")
         }
 
-        override suspend fun ProducerScope<GreetReply>.greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) {
+        override suspend fun greetBidirectional(requests: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
             close(notFound("bidi"))
         }
     }

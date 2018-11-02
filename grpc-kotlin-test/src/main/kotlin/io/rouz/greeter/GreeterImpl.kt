@@ -20,18 +20,21 @@
 
 package io.rouz.greeter
 
-import kotlinx.coroutines.channels.ProducerScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.newFixedThreadPoolContext
 import mu.KotlinLogging
+import java.util.concurrent.Executors.newFixedThreadPool
 
 /**
  * Implementation of coroutine-based gRPC service defined in greeter.proto
  */
+@UseExperimental(ExperimentalCoroutinesApi::class)
 class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
-    coroutineContext = newFixedThreadPoolContext(4, "server-pool"),
+    coroutineContext = newFixedThreadPool(4).asCoroutineDispatcher(),
     sendChannelCapacity = 4
 ) {
 
@@ -45,7 +48,7 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
             .build()
     }
 
-    override suspend fun ProducerScope<GreetReply>.greetServerStream(request: GreetRequest) {
+    override suspend fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
         log.info(request.greeting)
 
         send(
@@ -60,10 +63,10 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
         )
     }
 
-    override suspend fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): GreetReply {
+    override suspend fun greetClientStream(requests: ReceiveChannel<GreetRequest>): GreetReply {
         val greetings = mutableListOf<String>()
 
-        for (request in requestChannel) {
+        for (request in requests) {
             log.info(request.greeting)
             greetings.add(request.greeting)
         }
@@ -73,10 +76,10 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
             .build()
     }
 
-    override suspend fun ProducerScope<GreetReply>.greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) {
+    override suspend fun greetBidirectional(requests: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
         var count = 0
 
-        for (request in requestChannel) {
+        for (request in requests) {
             val n = count++
             log.info("$n ${request.greeting}")
             launch {
