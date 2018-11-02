@@ -114,9 +114,9 @@ messages from the caller.
 Here's an example server that demonstrates how each type of endpoint is implemented.
 
 ```kotlin
-import kotlinx.coroutines.experimental.*
-import kotlinx.coroutines.experimental.channels.ReceiveChannel
-import kotlinx.coroutines.experimental.channels.produce
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.produce
 
 class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
   coroutineContext = newFixedThreadPoolContext(4, "server-pool")
@@ -176,9 +176,9 @@ and `SendChannel<TRequest>`.
 
 ```kotlin
 import io.grpc.ManagedChannelBuilder
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 fun main(args: Array<String>) {
   val localhost = ManagedChannelBuilder.forAddress("localhost", 8080)

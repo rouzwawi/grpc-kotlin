@@ -22,9 +22,9 @@ package io.rouz.greeter
 
 import io.grpc.ManagedChannelBuilder
 import io.grpc.ServerBuilder
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 
 fun main(args: Array<String>) {
