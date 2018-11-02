@@ -50,78 +50,7 @@ service Greeter {
 }
 ```
 
-### Maven configuration
-
-Add the `grpc-kotlin-gen` plugin to your `protobuf-maven-plugin` configuration (see [using custom protoc plugins](https://www.xolstice.org/protobuf-maven-plugin/examples/protoc-plugin.html))
-
-```xml
-<protocPlugins>
-    <protocPlugin>
-        <id>GrpcKotlinGenerator</id>
-        <groupId>io.rouz</groupId>
-        <artifactId>grpc-kotlin-gen</artifactId>
-        <version>0.0.4</version>
-        <mainClass>io.rouz.grpc.kotlin.GrpcKotlinGenerator</mainClass>
-    </protocPlugin>
-</protocPlugins>
-```
-
-Add the kotlin dependencies
-
-```xml
-<dependency>
-  <groupId>org.jetbrains.kotlin</groupId>
-  <artifactId>kotlin-stdlib</artifactId>
-  <version>1.3.0</version>
-</dependency>
-<dependency>
-  <groupId>org.jetbrains.kotlinx</groupId>
-  <artifactId>kotlinx-coroutines-core</artifactId>
-  <version>1.0.0</version>
-</dependency>
-```
-
-### Gradle configuration
-
-Add the `grpc-kotlin-gen` plugin to the plugins section of `protobuf-gradle-plugin`
-
-```gradle
-def protobufVersion = '3.5.1-1'
-def grpcVersion = '1.15.1'
-
-protobuf {
-    protoc {
-        // The artifact spec for the Protobuf Compiler
-        artifact = "com.google.protobuf:protoc:${protobufVersion}"
-    }
-    plugins {
-        grpc {
-            artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
-        }
-        grpckotlin {
-            artifact = "io.rouz:grpc-kotlin-gen:0.0.4:jdk8@jar"
-        }
-    }
-    generateProtoTasks {
-        all()*.plugins {
-            grpc {}
-            grpckotlin {}
-        }
-    }
-}
-```
-
-Add the kotlin dependencies
-
-```gradle
-def kotlinVersion = '1.3.0'
-def kotlinCoroutinesVersion = '1.0.0'
-
-dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:kotlinCoroutinesVersion"
-}
-```
+Run the protoc plugin to get the generated code, see [build tool configuration](#maven-configuration)
 
 ### Server
 
@@ -414,6 +343,79 @@ throw a `StatusException`.
 Note that you should not call `close(Throwable)` or `close()` from within the `ProducerScope<T>`
 blocks you get from `produce` as the producer will automatically be closed when all sub-contexts are
 closed (or if an exception is thrown).
+
+## Maven configuration
+
+Add the `grpc-kotlin-gen` plugin to your `protobuf-maven-plugin` configuration (see [using custom protoc plugins](https://www.xolstice.org/protobuf-maven-plugin/examples/protoc-plugin.html))
+
+```xml
+<protocPlugins>
+    <protocPlugin>
+        <id>GrpcKotlinGenerator</id>
+        <groupId>io.rouz</groupId>
+        <artifactId>grpc-kotlin-gen</artifactId>
+        <version>0.0.4</version>
+        <mainClass>io.rouz.grpc.kotlin.GrpcKotlinGenerator</mainClass>
+    </protocPlugin>
+</protocPlugins>
+```
+
+Add the kotlin dependencies
+
+```xml
+<dependency>
+  <groupId>org.jetbrains.kotlin</groupId>
+  <artifactId>kotlin-stdlib</artifactId>
+  <version>1.3.0</version>
+</dependency>
+<dependency>
+  <groupId>org.jetbrains.kotlinx</groupId>
+  <artifactId>kotlinx-coroutines-core</artifactId>
+  <version>1.0.0</version>
+</dependency>
+```
+
+## Gradle configuration
+
+Add the `grpc-kotlin-gen` plugin to the plugins section of `protobuf-gradle-plugin`
+
+```gradle
+def protobufVersion = '3.5.1-1'
+def grpcVersion = '1.15.1'
+
+protobuf {
+    protoc {
+        // The artifact spec for the Protobuf Compiler
+        artifact = "com.google.protobuf:protoc:${protobufVersion}"
+    }
+    plugins {
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
+        }
+        grpckotlin {
+            artifact = "io.rouz:grpc-kotlin-gen:0.0.4:jdk8@jar"
+        }
+    }
+    generateProtoTasks {
+        all()*.plugins {
+            grpc {}
+            grpckotlin {}
+        }
+    }
+}
+```
+
+Add the kotlin dependencies
+
+```gradle
+def kotlinVersion = '1.3.0'
+def kotlinCoroutinesVersion = '1.0.0'
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:kotlinCoroutinesVersion"
+}
+```
 
 
 [protoc]: https://www.xolstice.org/protobuf-maven-plugin/examples/protoc-plugin.html
