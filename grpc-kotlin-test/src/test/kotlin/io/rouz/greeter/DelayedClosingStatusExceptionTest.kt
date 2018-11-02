@@ -20,11 +20,11 @@
 
 package io.rouz.greeter
 
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.channels.ProducerScope
-import kotlinx.coroutines.experimental.channels.ReceiveChannel
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.ProducerScope
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class DelayedClosingStatusExceptionTest : StatusExceptionTestBase() {
 

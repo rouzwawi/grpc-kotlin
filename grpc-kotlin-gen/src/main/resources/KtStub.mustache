@@ -7,10 +7,10 @@ import {{packageName}}.{{serviceName}}Grpc.*
 import io.grpc.*
 import io.grpc.stub.*
 
-import kotlinx.coroutines.experimental.channels.Channel as KtChannel
-import kotlinx.coroutines.experimental.*
-import kotlinx.coroutines.experimental.channels.*
-import kotlin.coroutines.experimental.*
+import kotlinx.coroutines.channels.Channel as KtChannel
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
+import kotlin.coroutines.*
 
 {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
 @javax.annotation.Generated(
@@ -126,7 +126,7 @@ object {{className}} {
             launch {
                 supervisorScope {
                     tryCatchingStatus(responseObserver) {
-                        produce(capacity = sendChannelCapacity) {
+                        produce<{{outputType}}>(capacity = sendChannelCapacity) {
                             {{methodName}}(request)
                         }.consumeEach {
                             onNext(it)
@@ -170,7 +170,7 @@ object {{className}} {
             launch {
                 supervisorScope {
                     tryCatchingStatus(responseObserver) {
-                        produce(capacity = sendChannelCapacity) {
+                        produce<{{outputType}}>(capacity = sendChannelCapacity) {
                             {{methodName}}(requestChannel)
                         }.consumeEach {
                             onNext(it)

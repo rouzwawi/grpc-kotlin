@@ -22,7 +22,7 @@ package io.rouz.greeter
 
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
