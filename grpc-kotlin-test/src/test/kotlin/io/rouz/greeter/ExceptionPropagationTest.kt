@@ -21,8 +21,9 @@
 package io.rouz.greeter
 
 import io.grpc.StatusRuntimeException
-import kotlinx.coroutines.channels.ProducerScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
@@ -158,21 +159,22 @@ class ExceptionPropagationTest : GrpcTestBase() {
         throw seenExceptions[0]
     }
 
-    inner class CustomThrowingGreeter : GreeterGrpcKt.GreeterImplBase(collectExceptions) {
+    @UseExperimental(ExperimentalCoroutinesApi::class)
+    private inner class CustomThrowingGreeter : GreeterGrpcKt.GreeterImplBase(collectExceptions) {
 
         override suspend fun greet(request: GreetRequest): GreetReply {
             throw broke("uni")
         }
 
-        override suspend fun ProducerScope<GreetReply>.greetServerStream(request: GreetRequest) {
+        override suspend fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
             throw broke("sstream")
         }
 
-        override suspend fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): GreetReply {
+        override suspend fun greetClientStream(requests: ReceiveChannel<GreetRequest>): GreetReply {
             throw broke("cstream")
         }
 
-        override suspend fun ProducerScope<GreetReply>.greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) {
+        override suspend fun greetBidirectional(requests: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
             throw broke("bidi")
         }
 
