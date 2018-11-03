@@ -21,7 +21,7 @@ Enter Kotlin Coroutines! By generating native Kotlin stubs that allows us to use
 
 ## Quick start
 
-note: This has been tested with `gRPC 1.15.1`, `protobuf 3.5.1`, `kotlin 1.3.0` and 'coroutines 1.0.0`.
+note: This has been tested with `gRPC 1.15.1`, `protobuf 3.5.1`, `kotlin 1.3.0` and `coroutines 1.0.0`.
 
 Add a gRPC service definition to your project
 
