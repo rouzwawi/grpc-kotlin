@@ -190,7 +190,7 @@ fun main(args: Array<String>) {
 }
 ```
 
-## RCP method details
+## RPC method details
 
 ### Unary call
 
