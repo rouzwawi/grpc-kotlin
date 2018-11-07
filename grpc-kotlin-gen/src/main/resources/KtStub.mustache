@@ -105,7 +105,7 @@ object {{className}} {
             request: {{inputType}},
             responseObserver: StreamObserver<{{outputType}}>
         ) {
-            launch {
+            launch (ContextCoroutineContextElement()) {
                 tryCatchingStatus(responseObserver) {
                     val response = {{methodName}}(request)
                     onNext(response)
@@ -123,7 +123,7 @@ object {{className}} {
             request: {{inputType}},
             responseObserver: StreamObserver<{{outputType}}>
         ) {
-            launch {
+            launch (ContextCoroutineContextElement()) {
                 tryCatchingStatus(responseObserver) {
                     val responses = {{methodName}}(request)
                     for (response in responses) {
@@ -145,7 +145,7 @@ object {{className}} {
             responseObserver: StreamObserver<{{outputType}}>
         ): StreamObserver<{{inputType}}> {
             val requests = StreamObserverChannel<{{inputType}}>()
-            launch {
+            launch (ContextCoroutineContextElement()) {
                 tryCatchingStatus(responseObserver) {
                     val response = {{methodName}}(requests)
                     onNext(response)
@@ -164,7 +164,7 @@ object {{className}} {
             responseObserver: StreamObserver<{{outputType}}>
         ): StreamObserver<{{inputType}}> {
             val requests = StreamObserverChannel<{{inputType}}>()
-            launch {
+            launch (ContextCoroutineContextElement()) {
                 tryCatchingStatus(responseObserver) {
                     val responses = {{methodName}}(requests)
                     for (response in responses) {
@@ -281,6 +281,16 @@ object {{className}} {
         override fun onCompleted() { channel.close(cause = null) }
     }
 
+    private class ContextCoroutineContextElement : ThreadContextElement<Context> {
+        private val grpcContext: Context = Context.current()
+        companion object Key : CoroutineContext.Key<ContextCoroutineContextElement>
+
+        override val key: CoroutineContext.Key<ContextCoroutineContextElement>
+            get() = Key
+
+        override fun updateThreadContext(context: CoroutineContext): Context = grpcContext.attach()
+        override fun restoreThreadContext(context: CoroutineContext, oldState: Context) = grpcContext.detach(oldState)
+    }
     {{#methods}}
     val METHODID_{{methodNameUpperUnderscore}} = {{methodNumber}}
     {{/methods}}
