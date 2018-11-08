@@ -355,7 +355,7 @@ Add the `grpc-kotlin-gen` plugin to your `protobuf-maven-plugin` configuration (
         <id>GrpcKotlinGenerator</id>
         <groupId>io.rouz</groupId>
         <artifactId>grpc-kotlin-gen</artifactId>
-        <version>0.0.5</version>
+        <version>0.0.6</version>
         <mainClass>io.rouz.grpc.kotlin.GrpcKotlinGenerator</mainClass>
     </protocPlugin>
 </protocPlugins>
@@ -394,7 +394,7 @@ protobuf {
             artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
         }
         grpckotlin {
-            artifact = "io.rouz:grpc-kotlin-gen:0.0.5:jdk8@jar"
+            artifact = "io.rouz:grpc-kotlin-gen:0.0.6:jdk8@jar"
         }
     }
     generateProtoTasks {
