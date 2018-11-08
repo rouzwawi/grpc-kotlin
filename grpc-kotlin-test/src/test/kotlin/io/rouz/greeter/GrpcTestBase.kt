@@ -20,6 +20,10 @@
 
 package io.rouz.greeter
 
+import io.grpc.ClientInterceptor
+import io.grpc.ManagedChannel
+import io.grpc.Server
+import io.grpc.ServerInterceptor
 import io.grpc.inprocess.InProcessChannelBuilder
 import io.grpc.inprocess.InProcessServerBuilder
 import io.grpc.testing.GrpcCleanupRule
@@ -47,21 +51,35 @@ open class GrpcTestBase {
 
     protected fun startServer(service: GreeterImplBase): GreeterKtStub {
         grpcCleanup.register(
-            InProcessServerBuilder.forName(serverName)
-                .directExecutor()
-                .addService(service)
-                .build()
-                .start()
+            createServer(service)
         )
 
         val channel = grpcCleanup.register(
-            InProcessChannelBuilder.forName(serverName)
-                .directExecutor()
-                .build()
+            createChannel()
         )
 
         return GreeterGrpcKt.newStub(channel)
     }
+
+    protected open fun createServer(service: GreeterImplBase): Server {
+        return InProcessServerBuilder.forName(serverName)
+            .directExecutor()
+            .addService(service)
+            .apply { serverInterceptor()?.also { intercept(it) } }
+            .build()
+            .start()
+    }
+
+    protected open fun serverInterceptor(): ServerInterceptor? = null
+
+    protected open fun createChannel(): ManagedChannel {
+        return InProcessChannelBuilder.forName(serverName)
+            .directExecutor()
+            .apply { clientInterceptor()?.also { intercept(clientInterceptor()) } }
+            .build()
+    }
+
+    protected open fun clientInterceptor(): ClientInterceptor? = null
 
     fun req(greeting: String): GreetRequest {
         return GreetRequest.newBuilder().setGreeting(greeting).build()
