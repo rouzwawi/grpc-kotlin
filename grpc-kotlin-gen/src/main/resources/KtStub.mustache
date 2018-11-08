@@ -93,7 +93,7 @@ object {{className}} {
         private val _coroutineContext: CoroutineContext = coroutineContext
 
         override val coroutineContext: CoroutineContext
-            get() = _coroutineContext + ContextCoroutineContextElement()
+            get() = ContextCoroutineContextElement() + _coroutineContext
 
         {{#methods}}
         {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
@@ -286,8 +286,8 @@ object {{className}} {
     }
 
     private class ContextCoroutineContextElement : ThreadContextElement<Context> {
-        private val grpcContext: Context = Context.current()
         companion object Key : CoroutineContext.Key<ContextCoroutineContextElement>
+        private val grpcContext: Context = Context.current()
 
         override val key: CoroutineContext.Key<ContextCoroutineContextElement>
             get() = Key

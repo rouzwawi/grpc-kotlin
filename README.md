@@ -73,9 +73,10 @@ Here's an example server that demonstrates how each type of endpoint is implemen
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
+import java.util.concurrent.Executors.newFixedThreadPool
 
 class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
-  coroutineContext = newFixedThreadPoolContext(4, "server-pool")
+  coroutineContext = newFixedThreadPool(4).asCoroutineDispatcher()
 ) {
 
   // unary rpc
