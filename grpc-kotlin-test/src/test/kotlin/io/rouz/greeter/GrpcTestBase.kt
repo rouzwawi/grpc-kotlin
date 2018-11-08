@@ -75,7 +75,7 @@ open class GrpcTestBase {
     protected open fun createChannel(): ManagedChannel {
         return InProcessChannelBuilder.forName(serverName)
             .directExecutor()
-            .apply { clientInterceptor()?.also { intercept(clientInterceptor()) } }
+            .apply { clientInterceptor()?.also { intercept(it) } }
             .build()
     }
 
@@ -83,5 +83,9 @@ open class GrpcTestBase {
 
     fun req(greeting: String): GreetRequest {
         return GreetRequest.newBuilder().setGreeting(greeting).build()
+    }
+
+    fun repl(reply: String): GreetReply {
+        return GreetReply.newBuilder().setReply(reply).build()
     }
 }
