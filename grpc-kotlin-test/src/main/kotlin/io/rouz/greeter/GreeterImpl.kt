@@ -34,8 +34,7 @@ import java.util.concurrent.Executors.newFixedThreadPool
  */
 @UseExperimental(ExperimentalCoroutinesApi::class)
 class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
-    _coroutineContext = newFixedThreadPool(4).asCoroutineDispatcher(),
-    sendChannelCapacity = 4
+    coroutineContext = newFixedThreadPool(4).asCoroutineDispatcher()
 ) {
 
     private val log = KotlinLogging.logger("server")

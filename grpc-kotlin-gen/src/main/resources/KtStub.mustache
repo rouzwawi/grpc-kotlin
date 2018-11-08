@@ -87,9 +87,10 @@ object {{className}} {
 
     {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
     abstract class {{serviceName}}ImplBase(
-        private val _coroutineContext: CoroutineContext = Dispatchers.Default,
-        val sendChannelCapacity: Int = KtChannel.UNLIMITED
+        coroutineContext: CoroutineContext = Dispatchers.Default
     ) : BindableService, CoroutineScope {
+
+        private val _coroutineContext: CoroutineContext = coroutineContext
 
         override val coroutineContext: CoroutineContext
             get() = _coroutineContext + ContextCoroutineContextElement()
