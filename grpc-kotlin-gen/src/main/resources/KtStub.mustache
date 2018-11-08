@@ -87,9 +87,12 @@ object {{className}} {
 
     {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
     abstract class {{serviceName}}ImplBase(
-        override val coroutineContext: CoroutineContext = Dispatchers.Default,
+        private val _coroutineContext: CoroutineContext = Dispatchers.Default,
         val sendChannelCapacity: Int = KtChannel.UNLIMITED
     ) : BindableService, CoroutineScope {
+
+        override val coroutineContext: CoroutineContext
+            get() = _coroutineContext + ContextCoroutineContextElement()
 
         {{#methods}}
         {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
@@ -281,6 +284,16 @@ object {{className}} {
         override fun onCompleted() { channel.close(cause = null) }
     }
 
+    private class ContextCoroutineContextElement : ThreadContextElement<Context> {
+        private val grpcContext: Context = Context.current()
+        companion object Key : CoroutineContext.Key<ContextCoroutineContextElement>
+
+        override val key: CoroutineContext.Key<ContextCoroutineContextElement>
+            get() = Key
+
+        override fun updateThreadContext(context: CoroutineContext): Context = grpcContext.attach()
+        override fun restoreThreadContext(context: CoroutineContext, oldState: Context) = grpcContext.detach(oldState)
+    }
     {{#methods}}
     val METHODID_{{methodNameUpperUnderscore}} = {{methodNumber}}
     {{/methods}}

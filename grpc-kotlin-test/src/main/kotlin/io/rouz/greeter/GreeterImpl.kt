@@ -34,7 +34,7 @@ import java.util.concurrent.Executors.newFixedThreadPool
  */
 @UseExperimental(ExperimentalCoroutinesApi::class)
 class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
-    coroutineContext = newFixedThreadPool(4).asCoroutineDispatcher(),
+    _coroutineContext = newFixedThreadPool(4).asCoroutineDispatcher(),
     sendChannelCapacity = 4
 ) {
 
