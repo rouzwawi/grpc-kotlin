@@ -11,7 +11,6 @@ import io.rouz.grpc.*
 import kotlin.coroutines.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
-import kotlinx.coroutines.channels.Channel as KtChannel
 
 {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
 @javax.annotation.Generated(
@@ -19,72 +18,6 @@ import kotlinx.coroutines.channels.Channel as KtChannel
     comments = "Source: {{protoName}}"
 )
 object {{className}} {
-
-    /**
-     * Creates a new coroutine stub that supports all call types for the service
-     */
-    @JvmStatic
-    fun newStub(channel: Channel): {{serviceName}}KtStub {
-        return {{serviceName}}KtStub(channel)
-    }
-
-    class {{serviceName}}KtStub : AbstractStub<{{serviceName}}KtStub> {
-
-        private val delegate: {{packageName}}.{{serviceName}}Grpc.{{serviceName}}Stub
-
-        internal constructor(channel: Channel) : super(channel) {
-            delegate = {{packageName}}.{{serviceName}}Grpc.newStub(channel)
-        }
-
-        internal constructor(channel: Channel, callOptions: CallOptions) : super(channel, callOptions) {
-            delegate = {{packageName}}.{{serviceName}}Grpc.newStub(channel).build(channel, callOptions)
-        }
-
-        override fun build(channel: Channel, callOptions: CallOptions): {{serviceName}}KtStub {
-            return {{serviceName}}KtStub(channel, callOptions)
-        }
-
-        {{#methods}}
-        {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
-        {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
-        {{^isManyInput}}
-        {{^isManyOutput}}
-        {{! == unary req, unary resp == }}
-        suspend fun {{methodName}}(request: {{inputType}}): {{outputType}} {
-            return suspendCoroutine { cont ->
-                delegate.{{methodName}}(request, ContinuationStreamObserver(cont))
-            }
-        }
-        {{/isManyOutput}}
-        {{#isManyOutput}}
-        {{! == unary req, streaming resp == }}
-        fun {{methodName}}(request: {{inputType}}): ReceiveChannel<{{outputType}}> {
-            val responseChannel = StreamObserverChannel<{{outputType}}>()
-            delegate.{{methodName}}(request, responseChannel)
-            return responseChannel
-        }
-        {{/isManyOutput}}
-        {{/isManyInput}}
-        {{#isManyInput}}
-        {{^isManyOutput}}
-        {{! == streaming req, unary resp == }}
-        fun {{methodName}}(): ManyToOneCall<{{inputType}}, {{outputType}}> {
-            val responseDeferred = StreamObserverDeferred<{{outputType}}>()
-            val requestObserver = delegate.{{methodName}}(responseDeferred)
-            return ManyToOneCall(requestObserver, responseDeferred)
-        }
-        {{/isManyOutput}}
-        {{#isManyOutput}}
-        {{! == streaming req, streaming resp == }}
-        fun {{methodName}}(): ManyToManyCall<{{inputType}}, {{outputType}}> {
-            val responseChannel = StreamObserverChannel<{{outputType}}>()
-            val requestObserver = delegate.{{methodName}}(responseChannel)
-            return ManyToManyCall(requestObserver, responseChannel)
-        }
-        {{/isManyOutput}}
-        {{/isManyInput}}
-        {{/methods}}
-    }
 
     {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
     abstract class {{serviceName}}ImplBase(

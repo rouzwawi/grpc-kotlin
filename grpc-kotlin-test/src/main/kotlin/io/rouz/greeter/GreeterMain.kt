@@ -39,7 +39,7 @@ fun main(args: Array<String>) {
         .usePlaintext()
         .build()
 
-    val greeter = GreeterGrpcKt.newStub(localhost)
+    val greeter = GreeterGrpc.newStub(localhost)
 
     runBlocking {
         // === Unary call =============================================================================
