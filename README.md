@@ -191,7 +191,7 @@ fun main(args: Array<String>) {
 }
 ```
 
-## RPC method details
+## RPC method type reference
 
 ### Unary call
 
@@ -215,7 +215,7 @@ Suspendable call returning a single message.
 val response: GreetReply = stub.greet( /* GreetRequest */ )
 ```
 
-### Streaming request, Unary response
+### Client streaming call
 
 > `rpc GreetClientStream (stream GreetRequest) returns (GreetReply);`
 
@@ -250,7 +250,7 @@ call.close() //  don't forget to close the send channel
 val responseMessage = call.await()
 ```
 
-### Unary request, Streaming response
+### Server streaming call
 
 > `rpc GreetServerStream (GreetRequest) returns (stream GreetReply);`
 
@@ -288,7 +288,7 @@ for (responseMessage in responses) {
 }
 ```
 
-### Full bidirectional streaming
+### Full bidirectional streaming call
 
 > `rpc GreetBidirectional (stream GreetRequest) returns (stream GreetReply);`
 
