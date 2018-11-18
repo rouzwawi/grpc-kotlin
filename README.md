@@ -5,6 +5,30 @@
 
 gRPC Kotlin is a [protoc] plugin for generating native Kotlin bindings using [coroutine primitives] for [gRPC] services.
 
+  * [Why?](#why)
+  * [Quick start](#quick-start)
+     * [Server](#server)
+     * [Client](#client)
+  * [gRPC Context propagation](#grpc-context-propagation)
+  * [Exception handling](#exception-handling)
+  * [Maven configuration](#maven-configuration)
+  * [Gradle configuration](#gradle-configuration)
+  * [RPC method type reference](#rpc-method-type-reference)
+     * [Unary call](#unary-call)
+        * [Service](#service)
+        * [Client](#client-1)
+     * [Client streaming call](#client-streaming-call)
+        * [Service](#service-1)
+        * [Client](#client-2)
+     * [Server streaming call](#server-streaming-call)
+        * [Service](#service-2)
+        * [Client](#client-3)
+     * [Full bidirectional streaming call](#full-bidirectional-streaming-call)
+        * [Service](#service-3)
+        * [Client](#client-4)
+
+---
+
 ## Why?
 
 The asynchronous nature of bidirectional streaming rpc calls in gRPC makes them a bit hard to implement
