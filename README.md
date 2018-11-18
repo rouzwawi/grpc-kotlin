@@ -191,6 +191,57 @@ fun main(args: Array<String>) {
 }
 ```
 
+## gRPC Context propagation
+
+gRPC has a thread-local [`Context`] which is used to carry scoped values across API boundaries. With Kotlin coroutines
+possibly being dispatched on multiple threads, the thread-local nature of `Context` needs some special care. This is
+solved by two details in the generated Kotlin code.
+
+First, all the generated service `*ImplBase` classes implement `CoroutineScope`. This allows you to use any of
+the top level coroutine primitives such as `launch`, `async` and `produce` in your service implementation while still
+keeping them within the context of your service code. The actual `CoroutineContext` that is used can be set through the
+base class constructor, but defaults to `Dispatchers.default`.
+
+```kotlin
+abstract class MyServiceImplBase(
+    coroutineContext: CoroutineContext = Dispatchers.Default
+)
+```
+
+Second, in the getter for `CoroutineScope.coroutineContext`, an additional context key is added to the
+`CoroutineContext` that manages the gRPC Context `attach()` and `detach()` calls when dispatching coroutine
+continuations. This will ensure that the the gRPC context is always propagated across different coroutine boundaries,
+and eliminates the need to manually carry it across in user code.
+
+Here's a simple example that makes calls to other services concurrently and expects an authenticated user to be present
+in the gRPC Context. The two accesses to the context key may execute on different threads in the `CoroutineContext` but
+the accesses work as expected.
+
+```kotlin
+val authenticatedUser = Context.key<User>("authenticatedUser")
+
+override suspend fun greet(request: GreetRequest): GreetReply {
+    val motd = async { messageOfTheDay.getMessage() }
+    val weatherReport = async { weather.getWeatherReport(authenticatedUser.get().location) }
+
+    val reply = buildString {
+        append("Hello ${authenticatedUser.get().fullName}")
+        append("---")
+        append("Today's weather report: ${weatherReport.await()}")
+        append("---")
+        append(motd.await())
+    }
+
+    return GreetReply.newBuilder()
+        .setReply(reply)
+        .build()
+}
+```
+
+For another example of gRPC Context usage, see the code in [ContextBasedGreeterTest](grpc-kotlin-test/src/test/kotlin/io/rouz/greeter/ContextBasedGreeterTest.kt)
+
+Thanks to [`wfhartford`](https://github.com/wfhartford) for contributing!
+
 ## Exception handling
 
 The generated server code follows the standard exception propagation for Kotlin coroutines as described
@@ -428,6 +479,7 @@ call.close() //  don't forget to close the send channel
 [`Deferred`]: https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental/-deferred/index.html
 [`async`]: https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental/async.html
 [`produce`]: https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental.channels/produce.html
+[`Context`]: https://grpc.io/grpc-java/javadoc/io/grpc/Context.html
 [gRPC]: https://grpc.io/
 [reactive bindings]: https://github.com/salesforce/reactive-grpc
 
