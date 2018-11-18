@@ -78,33 +78,35 @@
     </extensions>
 
     <plugins>
-      <plugin>
-        <groupId>org.xolstice.maven.plugins</groupId>
-        <artifactId>protobuf-maven-plugin</artifactId>
-        <version>0.5.0</version>
-        <configuration>
-          <protocArtifact>com.google.protobuf:protoc:3.5.1-1:exe:${os.detected.classifier}</protocArtifact>
-          <pluginId>grpc-java</pluginId>
-          <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
-          <protocPlugins>
-            <protocPlugin>
-              <id>GrpcKotlinGenerator</id>
-              <groupId>io.rouz</groupId>
-              <artifactId>grpc-kotlin-gen</artifactId>
-              <version>${project.version}</version>
-              <mainClass>io.rouz.grpc.kotlin.GrpcKotlinGenerator</mainClass>
-            </protocPlugin>
-          </protocPlugins>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>compile</goal>
-              <goal>compile-custom</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+        <plugin>
+          <groupId>org.xolstice.maven.plugins</groupId>
+          <artifactId>protobuf-maven-plugin</artifactId>
+          <version>0.6.1</version>
+          <configuration>
+            <protocArtifact>com.google.protobuf:protoc:3.5.1-1:exe:${os.detected.classifier}</protocArtifact>
+          </configuration>
+          <executions>
+            <execution>
+              <goals><goal>compile</goal></goals>
+            </execution>
+            <execution>
+              <id>grpc-java</id>
+              <goals><goal>compile-custom</goal></goals>
+              <configuration>
+                <pluginId>grpc-java</pluginId>
+                <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+              </configuration>
+            </execution>
+            <execution>
+              <id>grpc-kotlin</id>
+              <goals><goal>compile-custom</goal></goals>
+              <configuration>
+                <pluginId>grpc-kotlin</pluginId>
+                <pluginArtifact>io.rouz:grpc-kotlin-gen:${project.version}:jar:jdk8</pluginArtifact>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
 
       <plugin>
         <artifactId>kotlin-maven-plugin</artifactId>
@@ -117,13 +119,11 @@
         <executions>
           <execution>
             <id>compile</id>
-            <goals>
-              <goal>compile</goal>
-            </goals>
+            <goals><goal>compile</goal></goals>
             <configuration>
               <sourceDirs>
                 <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
-                <sourceDir>${project.basedir}/src/main/java</sourceDir>
+                <sourceDir>${project.basedir}/target/generated-sources/protobuf/grpc-kotlin</sourceDir>
                 <sourceDir>${project.basedir}/target/generated-sources/protobuf/grpc-java</sourceDir>
                 <sourceDir>${project.basedir}/target/generated-sources/protobuf/java</sourceDir>
               </sourceDirs>

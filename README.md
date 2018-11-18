@@ -280,19 +280,41 @@ closed (or if an exception is thrown).
 
 ## Maven configuration
 
-Add the `grpc-kotlin-gen` plugin to your `protobuf-maven-plugin` configuration (see [using custom protoc plugins](https://www.xolstice.org/protobuf-maven-plugin/examples/protoc-plugin.html))
+Add the `grpc-kotlin-gen` plugin to your `protobuf-maven-plugin` configuration (see [compile-custom goal](https://www.xolstice.org/protobuf-maven-plugin/compile-custom-mojo.html))
 
 ```xml
-<protocPlugins>
-    <protocPlugin>
-        <id>GrpcKotlinGenerator</id>
-        <groupId>io.rouz</groupId>
-        <artifactId>grpc-kotlin-gen</artifactId>
-        <version>0.0.6</version>
-        <mainClass>io.rouz.grpc.kotlin.GrpcKotlinGenerator</mainClass>
-    </protocPlugin>
-</protocPlugins>
+<plugin>
+  <groupId>org.xolstice.maven.plugins</groupId>
+  <artifactId>protobuf-maven-plugin</artifactId>
+  <version>0.6.1</version>
+  <configuration>
+    <protocArtifact>com.google.protobuf:protoc:3.5.1-1:exe:${os.detected.classifier}</protocArtifact>
+  </configuration>
+  <executions>
+    <execution>
+      <goals><goal>compile</goal></goals>
+    </execution>
+    <execution>
+      <id>grpc-java</id>
+      <goals><goal>compile-custom</goal></goals>
+      <configuration>
+        <pluginId>grpc-java</pluginId>
+        <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+      </configuration>
+    </execution>
+    <execution>
+      <id>grpc-kotlin</id>
+      <goals><goal>compile-custom</goal></goals>
+      <configuration>
+        <pluginId>grpc-kotlin</pluginId>
+        <pluginArtifact>io.rouz:grpc-kotlin-gen:0.0.6:jar:jdk8</pluginArtifact>
+      </configuration>
+    </execution>
+  </executions>
+</plugin>
 ```
+
+_Note that this only works on unix like system at the moment._
 
 Add the kotlin dependencies
 
@@ -307,6 +329,30 @@ Add the kotlin dependencies
   <artifactId>kotlinx-coroutines-core</artifactId>
   <version>1.0.0</version>
 </dependency>
+```
+
+Finally, make sure to add the generated source directories to the `kotlin-maven-plugin`
+
+```xml
+<plugin>
+  <artifactId>kotlin-maven-plugin</artifactId>
+  <groupId>org.jetbrains.kotlin</groupId>
+  <version>${kotlin.version}</version>
+  <executions>
+    <execution>
+      <id>compile</id>
+      <goals><goal>compile</goal></goals>
+      <configuration>
+        <sourceDirs>
+          <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+          <sourceDir>${project.basedir}/target/generated-sources/protobuf/grpc-kotlin</sourceDir>
+          <sourceDir>${project.basedir}/target/generated-sources/protobuf/grpc-java</sourceDir>
+          <sourceDir>${project.basedir}/target/generated-sources/protobuf/java</sourceDir>
+        </sourceDirs>
+      </configuration>
+    </execution>
+  </executions>
+</plugin>
 ```
 
 ## Gradle configuration
@@ -338,6 +384,8 @@ protobuf {
     }
 }
 ```
+
+_Note that this only works on unix like system at the moment._
 
 Add the kotlin dependencies
 
