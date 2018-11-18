@@ -27,30 +27,33 @@
 
 package io.rouz.grpc.kotlin;
 
-import static com.google.protobuf.DescriptorProtos.FileDescriptorProto;
-import static com.google.protobuf.DescriptorProtos.FileOptions;
-import static com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
-import static com.google.protobuf.compiler.PluginProtos.CodeGeneratorRequest;
-import static com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse;
-
 import com.google.common.base.Strings;
 import com.google.common.html.HtmlEscapers;
+import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
+import com.google.protobuf.DescriptorProtos.FileOptions;
 import com.google.protobuf.DescriptorProtos.MethodDescriptorProto;
+import com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
 import com.google.protobuf.DescriptorProtos.SourceCodeInfo.Location;
 import com.google.protobuf.compiler.PluginProtos;
 import com.salesforce.jprotoc.Generator;
 import com.salesforce.jprotoc.GeneratorException;
 import com.salesforce.jprotoc.ProtoTypeMap;
 import com.salesforce.jprotoc.ProtocPlugin;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.google.protobuf.compiler.PluginProtos.CodeGeneratorRequest;
+import static com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse;
 
 public class GrpcKotlinGenerator extends Generator {
 
   private static final int METHOD_NUMBER_OF_PATHS = 4;
   private static final String CLASS_SUFFIX = "GrpcKt";
+  private static final String ADAPTERS_FILE_PATH = "io/rouz/grpc/adapters.kt";
   private static final String SERVICE_JAVA_DOC_PREFIX = "    ";
   private static final String METHOD_JAVA_DOC_PREFIX = "        ";
 
@@ -163,9 +166,21 @@ public class GrpcKotlinGenerator extends Generator {
   }
 
   private List<PluginProtos.CodeGeneratorResponse.File> generateFiles(List<Context> services) {
-    return services.stream()
-        .map(this::buildFile)
-        .collect(Collectors.toList());
+    return Stream.concat(
+        Stream.of(buildUtilFile()),
+        services.stream().map(this::buildFile)
+    ).collect(Collectors.toList());
+  }
+
+  private PluginProtos.CodeGeneratorResponse.File buildUtilFile() {
+    UtilContext utilContext = new UtilContext();
+    String content = applyTemplate("adapters.mustache", utilContext);
+
+    return PluginProtos.CodeGeneratorResponse.File
+        .newBuilder()
+        .setName(ADAPTERS_FILE_PATH)
+        .setContent(content)
+        .build();
   }
 
   private PluginProtos.CodeGeneratorResponse.File buildFile(Context context) {
@@ -255,5 +270,11 @@ public class GrpcKotlinGenerator extends Generator {
     public String methodNamePascalCase() {
       return String.valueOf(Character.toUpperCase(methodName.charAt(0))) + methodName.substring(1);
     }
+  }
+
+  /**
+   * Template class for adapters file.
+   */
+  private class UtilContext {
   }
 }

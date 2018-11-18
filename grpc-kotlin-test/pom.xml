@@ -137,7 +137,6 @@
             <configuration>
               <sourceDirs>
                 <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
-                <sourceDir>${project.basedir}/src/test/java</sourceDir>
               </sourceDirs>
             </configuration>
           </execution>
