@@ -27,8 +27,8 @@ import io.grpc.ServerInterceptor
 import io.grpc.inprocess.InProcessChannelBuilder
 import io.grpc.inprocess.InProcessServerBuilder
 import io.grpc.testing.GrpcCleanupRule
+import io.rouz.greeter.GreeterGrpc.GreeterStub
 import io.rouz.greeter.GreeterGrpcKt.GreeterImplBase
-import io.rouz.greeter.GreeterGrpcKt.GreeterKtStub
 import kotlinx.coroutines.CoroutineExceptionHandler
 import mu.KotlinLogging
 import org.junit.Rule
@@ -49,7 +49,7 @@ open class GrpcTestBase {
         log.info("Caught exception in exception handler: $t")
     }
 
-    protected fun startServer(service: GreeterImplBase): GreeterKtStub {
+    protected fun startServer(service: GreeterImplBase): GreeterStub {
         grpcCleanup.register(
             createServer(service)
         )
@@ -58,7 +58,7 @@ open class GrpcTestBase {
             createChannel()
         )
 
-        return GreeterGrpcKt.newStub(channel)
+        return GreeterGrpc.newStub(channel)
     }
 
     protected open fun createServer(service: GreeterImplBase): Server {

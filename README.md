@@ -152,7 +152,7 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
 
 ### Client
 
-The generated client stub is also fully implemented using `suspend` functions, `Deferred<TReply>`
+Extensions functions for the original Java stubs are generated that use `suspend` functions, `Deferred<TReply>`
 and `SendChannel<TRequest>`.
 
 ```kotlin
@@ -165,7 +165,7 @@ fun main(args: Array<String>) {
   val localhost = ManagedChannelBuilder.forAddress("localhost", 8080)
       .usePlaintext(true)
       .build()
-  val greeter = GreeterGrpcKt.newStub(localhost)
+  val greeter = GreeterGrpc.newStub(localhost)
 
   runBlocking {
     // === Unary call =============================================================================
