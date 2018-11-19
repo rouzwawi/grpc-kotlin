@@ -5,6 +5,11 @@ import "io/rouz/greeter.proto";
 
 option java_package = "io.rouz.kvs";
 
+message KvsMessage {
+    string msg = 1;
+}
+
 service KeyValueStore {
     rpc GetKeyForGreeting (io.rouz.greeter.GreetRequest) returns (io.rouz.greeter.GreetReply);
+    rpc Dummy (KvsMessage) returns (KvsMessage);
 }
