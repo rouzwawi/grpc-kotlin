@@ -38,6 +38,7 @@ open class StreamObserverSendAdapter<in E>(private val streamObserver: StreamObs
 class ContinuationStreamObserver<E>(
     private val continuation: Continuation<E>
 ) : StreamObserver<E> {
+
     override fun onNext(value: E) {
         continuation.resume(value)
     }

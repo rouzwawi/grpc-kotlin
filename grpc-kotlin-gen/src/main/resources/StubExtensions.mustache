@@ -22,8 +22,8 @@ import kotlin.coroutines.suspendCoroutine
 {{^isManyOutput}}
 {{! == unary req, unary resp == }}
 suspend fun {{serviceName}}Stub.{{methodName}}(request: {{inputType}}): {{outputType}} {
-    return suspendCoroutine { cont ->
-        {{methodName}}(request, ContinuationStreamObserver(cont))
+    return suspendCoroutine {
+        {{methodName}}(request, ContinuationStreamObserver(it))
     }
 }
 {{/isManyOutput}}
