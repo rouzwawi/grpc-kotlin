@@ -27,7 +27,7 @@ import org.junit.After
 
 class NoStatusExceptionPropagationTest : StatusExceptionTestBase() {
 
-    override val service: GreeterGrpcKt.GreeterImplBase
+    override val service: GreeterImplBase
         get() = StatusThrowingGreeter()
 
     @After
@@ -38,7 +38,7 @@ class NoStatusExceptionPropagationTest : StatusExceptionTestBase() {
     }
 
     @UseExperimental(ExperimentalCoroutinesApi::class)
-    private inner class StatusThrowingGreeter : GreeterGrpcKt.GreeterImplBase(collectExceptions) {
+    private inner class StatusThrowingGreeter : GreeterImplBase(collectExceptions) {
 
         override suspend fun greet(request: GreetRequest): GreetReply {
             throw notFound("uni")

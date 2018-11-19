@@ -30,11 +30,11 @@ import kotlinx.coroutines.launch
 @UseExperimental(ExperimentalCoroutinesApi::class)
 class DelayedThrowingStatusExceptionTest : StatusExceptionTestBase() {
 
-    override val service: GreeterGrpcKt.GreeterImplBase
+    override val service: GreeterImplBase
         get() = StatusThrowingGreeter()
 
     @UseExperimental(ExperimentalCoroutinesApi::class)
-    private inner class StatusThrowingGreeter : GreeterGrpcKt.GreeterImplBase(collectExceptions) {
+    private inner class StatusThrowingGreeter : GreeterImplBase(collectExceptions) {
 
         override suspend fun greet(request: GreetRequest): GreetReply {
             async {

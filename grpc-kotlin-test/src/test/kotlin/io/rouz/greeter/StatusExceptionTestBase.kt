@@ -33,7 +33,7 @@ abstract class StatusExceptionTestBase : GrpcTestBase() {
     @JvmField
     val expect = ExpectedException.none()
 
-    abstract val service: GreeterGrpcKt.GreeterImplBase
+    abstract val service: GreeterImplBase
 
     @Test
     fun unaryStatus() {

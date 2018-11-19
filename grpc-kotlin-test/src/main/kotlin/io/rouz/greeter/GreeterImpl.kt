@@ -33,7 +33,7 @@ import java.util.concurrent.Executors.newFixedThreadPool
  * Implementation of coroutine-based gRPC service defined in greeter.proto
  */
 @UseExperimental(ExperimentalCoroutinesApi::class)
-class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
+class GreeterImpl : GreeterImplBase(
     coroutineContext = newFixedThreadPool(4, threadFactory("server-worker-%d")).asCoroutineDispatcher()
 ) {
 

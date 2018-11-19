@@ -78,9 +78,10 @@ Run the protoc plugin to get the generated code, see [build tool configuration](
 
 ### Server
 
-After compilation, you'll find the generated Kotlin stubs in an `object` named `GreeterGrpcKt`. Both
-the service base class and client stub will use `suspend` and `Channel<T>` instead of the typical
-`StreamObserver<T>` interfaces.
+After compilation, you'll find the generated Kotlin code in the same package as the generated Java
+code. A service base class named `GreeterImplBase` and a file with extension functions for the
+client stub named `GreeterStubExt.kt`. Both the service base class and client stub extensions will
+use `suspend` and `Channel<T>` instead of the typical `StreamObserver<T>` interfaces.
 
 All functions have the [`suspend`] modifier so they can call into any suspending code, including the
 [core coroutine primitives] like `delay` and `async`.
@@ -99,7 +100,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
 import java.util.concurrent.Executors.newFixedThreadPool
 
-class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
+class GreeterImpl : GreeterImplBase(
   coroutineContext = newFixedThreadPool(4).asCoroutineDispatcher()
 ) {
 
