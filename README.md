@@ -45,7 +45,7 @@ Enter Kotlin Coroutines! By generating native Kotlin stubs that allows us to use
 
 ## Quick start
 
-note: This has been tested with `gRPC 1.15.1`, `protobuf 3.5.1`, `kotlin 1.3.0` and `coroutines 1.0.0`.
+note: This has been tested with `gRPC 1.16.1`, `protobuf 3.5.1-1`, `kotlin 1.3.0` and `coroutines 1.0.0`.
 
 Add a gRPC service definition to your project
 
@@ -308,7 +308,7 @@ Add the `grpc-kotlin-gen` plugin to your `protobuf-maven-plugin` configuration (
       <goals><goal>compile-custom</goal></goals>
       <configuration>
         <pluginId>grpc-kotlin</pluginId>
-        <pluginArtifact>io.rouz:grpc-kotlin-gen:0.0.6:jar:jdk8</pluginArtifact>
+        <pluginArtifact>io.rouz:grpc-kotlin-gen:0.1.0:jar:jdk8</pluginArtifact>
       </configuration>
     </execution>
   </executions>
@@ -361,7 +361,7 @@ Finally, make sure to add the generated source directories to the `kotlin-maven-
 Add the `grpc-kotlin-gen` plugin to the plugins section of `protobuf-gradle-plugin`
 
 ```gradle
-def protobufVersion = '3.5.1-1'
+def protobufVersion = '3.6.1'
 def grpcVersion = '1.15.1'
 
 protobuf {
@@ -374,7 +374,7 @@ protobuf {
             artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
         }
         grpckotlin {
-            artifact = "io.rouz:grpc-kotlin-gen:0.0.6:jdk8@jar"
+            artifact = "io.rouz:grpc-kotlin-gen:0.1.0:jdk8@jar"
         }
     }
     generateProtoTasks {
