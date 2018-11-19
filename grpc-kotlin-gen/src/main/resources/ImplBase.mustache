@@ -165,7 +165,7 @@ object {{className}} {
     }
 
     {{#methods}}
-    val METHODID_{{methodNameUpperUnderscore}} = {{methodNumber}}
+    private const val METHODID_{{methodNameUpperUnderscore}} = {{methodNumber}}
     {{/methods}}
 
     private class MethodHandlers<Req, Resp> internal constructor(
