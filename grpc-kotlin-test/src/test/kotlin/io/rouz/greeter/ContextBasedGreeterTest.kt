@@ -96,7 +96,7 @@ class ContextBasedGreeterTest : GrpcTestBase() {
 
     override fun serverInterceptor(): ServerInterceptor = ServerNameInterceptor
 
-    inner class ContextGreeter : GreeterGrpcKt.GreeterImplBase() {
+    inner class ContextGreeter : GreeterImplBase() {
         override suspend fun greet(request: GreetRequest): GreetReply =
             repl("Hello ${userContextKey.get() ?: "anonymous"}")
 

@@ -51,7 +51,7 @@ import static com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse;
 public class GrpcKotlinGenerator extends Generator {
 
   private static final int METHOD_NUMBER_OF_PATHS = 4;
-  private static final String CLASS_SUFFIX = "GrpcKt";
+  private static final String CLASS_SUFFIX = "ImplBase";
   private static final String STUB_SUFFIX = "StubExt";
   private static final String ADAPTERS_FILE_PATH = "io/rouz/grpc/Adapters.kt";
   private static final String SERVICE_JAVA_DOC_PREFIX = "    ";
@@ -115,7 +115,6 @@ public class GrpcKotlinGenerator extends Generator {
       int serviceNumber) {
 
     Context context = new Context();
-    context.className = serviceProto.getName() + CLASS_SUFFIX;
     context.serviceName = serviceProto.getName();
     context.deprecated = serviceProto.getOptions() != null
         && serviceProto.getOptions().getDeprecated();
@@ -240,10 +239,9 @@ public class GrpcKotlinGenerator extends Generator {
    * Template class for proto Service objects.
    */
   private class Context {
-    // CHECKSTYLE DISABLE VisibilityModifier FOR 7 LINES
+    // CHECKSTYLE DISABLE VisibilityModifier FOR 6 LINES
     public String protoName;
     public String packageName;
-    public String className;
     public String serviceName;
     public boolean deprecated;
     public String javaDoc;

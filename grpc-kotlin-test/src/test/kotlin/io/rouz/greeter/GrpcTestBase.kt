@@ -28,7 +28,6 @@ import io.grpc.inprocess.InProcessChannelBuilder
 import io.grpc.inprocess.InProcessServerBuilder
 import io.grpc.testing.GrpcCleanupRule
 import io.rouz.greeter.GreeterGrpc.GreeterStub
-import io.rouz.greeter.GreeterGrpcKt.GreeterImplBase
 import kotlinx.coroutines.CoroutineExceptionHandler
 import mu.KotlinLogging
 import org.junit.Rule

@@ -160,7 +160,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
     }
 
     @UseExperimental(ExperimentalCoroutinesApi::class)
-    private inner class CustomThrowingGreeter : GreeterGrpcKt.GreeterImplBase(collectExceptions) {
+    private inner class CustomThrowingGreeter : GreeterImplBase(collectExceptions) {
 
         override suspend fun greet(request: GreetRequest): GreetReply {
             throw broke("uni")

@@ -80,5 +80,5 @@ class UnimplementedStatusTest : GrpcTestBase() {
         }
     }
 
-    inner class UnimplementedGreeter : GreeterGrpcKt.GreeterImplBase(collectExceptions)
+    inner class UnimplementedGreeter : GreeterImplBase(collectExceptions)
 }

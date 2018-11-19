@@ -12,122 +12,119 @@ import kotlin.coroutines.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 
+{{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
 {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
 @javax.annotation.Generated(
     value = ["by gRPC Kotlin generator"],
     comments = "Source: {{protoName}}"
 )
-object {{className}} {
+abstract class {{serviceName}}ImplBase(
+    coroutineContext: CoroutineContext = Dispatchers.Default
+) : BindableService, CoroutineScope {
 
+    private val _coroutineContext: CoroutineContext = coroutineContext
+
+    override val coroutineContext: CoroutineContext
+        get() = ContextCoroutineContextElement() + _coroutineContext
+
+    {{#methods}}
     {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
-    abstract class {{serviceName}}ImplBase(
-        coroutineContext: CoroutineContext = Dispatchers.Default
-    ) : BindableService, CoroutineScope {
+    {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
+    {{^isManyInput}}
+    {{^isManyOutput}}
+    {{! == unary req, unary resp == }}
+    open suspend fun {{methodName}}(request: {{inputType}}): {{outputType}} {
+        throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
+    }
 
-        private val _coroutineContext: CoroutineContext = coroutineContext
-
-        override val coroutineContext: CoroutineContext
-            get() = ContextCoroutineContextElement() + _coroutineContext
-
-        {{#methods}}
-        {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
-        {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
-        {{^isManyInput}}
-        {{^isManyOutput}}
-        {{! == unary req, unary resp == }}
-        open suspend fun {{methodName}}(request: {{inputType}}): {{outputType}} {
-            throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
+    internal fun {{methodName}}Internal(
+        request: {{inputType}},
+        responseObserver: StreamObserver<{{outputType}}>
+    ) {
+        launch {
+            tryCatchingStatus(responseObserver) {
+                val response = {{methodName}}(request)
+                onNext(response)
+            }
         }
+    }
+    {{/isManyOutput}}
+    {{#isManyOutput}}
+    {{! == unary req, streaming resp == }}
+    open suspend fun {{methodName}}(request: {{inputType}}): ReceiveChannel<{{outputType}}> {
+        throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
+    }
 
-        internal fun {{methodName}}Internal(
-            request: {{inputType}},
-            responseObserver: StreamObserver<{{outputType}}>
-        ) {
-            launch {
-                tryCatchingStatus(responseObserver) {
-                    val response = {{methodName}}(request)
+    internal fun {{methodName}}Internal(
+        request: {{inputType}},
+        responseObserver: StreamObserver<{{outputType}}>
+    ) {
+        launch {
+            tryCatchingStatus(responseObserver) {
+                val responses = {{methodName}}(request)
+                for (response in responses) {
+                  onNext(response)
+                }
+            }
+        }
+    }
+    {{/isManyOutput}}
+    {{/isManyInput}}
+    {{#isManyInput}}
+    {{^isManyOutput}}
+    {{! == streaming req, unary resp == }}
+    open suspend fun {{methodName}}(requests: ReceiveChannel<{{inputType}}>): {{outputType}} {
+        throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
+    }
+
+    internal fun {{methodName}}Internal(
+        responseObserver: StreamObserver<{{outputType}}>
+    ): StreamObserver<{{inputType}}> {
+        val requests = StreamObserverChannel<{{inputType}}>()
+        launch {
+            tryCatchingStatus(responseObserver) {
+                val response = {{methodName}}(requests)
+                onNext(response)
+            }
+        }
+        return requests
+    }
+    {{/isManyOutput}}
+    {{#isManyOutput}}
+    {{! == streaming req, streaming resp == }}
+    open suspend fun {{methodName}}(requests: ReceiveChannel<{{inputType}}>): ReceiveChannel<{{outputType}}> {
+        throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
+    }
+
+    internal fun {{methodName}}Internal(
+        responseObserver: StreamObserver<{{outputType}}>
+    ): StreamObserver<{{inputType}}> {
+        val requests = StreamObserverChannel<{{inputType}}>()
+        launch {
+            tryCatchingStatus(responseObserver) {
+                val responses = {{methodName}}(requests)
+                for (response in responses) {
                     onNext(response)
                 }
             }
         }
-        {{/isManyOutput}}
-        {{#isManyOutput}}
-        {{! == unary req, streaming resp == }}
-        open suspend fun {{methodName}}(request: {{inputType}}): ReceiveChannel<{{outputType}}> {
-            throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
-        }
+        return requests
+    }
+    {{/isManyOutput}}
+    {{/isManyInput}}
+    {{/methods}}
 
-        internal fun {{methodName}}Internal(
-            request: {{inputType}},
-            responseObserver: StreamObserver<{{outputType}}>
-        ) {
-            launch {
-                tryCatchingStatus(responseObserver) {
-                    val responses = {{methodName}}(request)
-                    for (response in responses) {
-                      onNext(response)
-                    }
-                }
-            }
-        }
-        {{/isManyOutput}}
-        {{/isManyInput}}
-        {{#isManyInput}}
-        {{^isManyOutput}}
-        {{! == streaming req, unary resp == }}
-        open suspend fun {{methodName}}(requests: ReceiveChannel<{{inputType}}>): {{outputType}} {
-            throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
-        }
-
-        internal fun {{methodName}}Internal(
-            responseObserver: StreamObserver<{{outputType}}>
-        ): StreamObserver<{{inputType}}> {
-            val requests = StreamObserverChannel<{{inputType}}>()
-            launch {
-                tryCatchingStatus(responseObserver) {
-                    val response = {{methodName}}(requests)
-                    onNext(response)
-                }
-            }
-            return requests
-        }
-        {{/isManyOutput}}
-        {{#isManyOutput}}
-        {{! == streaming req, streaming resp == }}
-        open suspend fun {{methodName}}(requests: ReceiveChannel<{{inputType}}>): ReceiveChannel<{{outputType}}> {
-            throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
-        }
-
-        internal fun {{methodName}}Internal(
-            responseObserver: StreamObserver<{{outputType}}>
-        ): StreamObserver<{{inputType}}> {
-            val requests = StreamObserverChannel<{{inputType}}>()
-            launch {
-                tryCatchingStatus(responseObserver) {
-                    val responses = {{methodName}}(requests)
-                    for (response in responses) {
-                        onNext(response)
-                    }
-                }
-            }
-            return requests
-        }
-        {{/isManyOutput}}
-        {{/isManyInput}}
-        {{/methods}}
-
-        override fun bindService(): ServerServiceDefinition {
-            return ServerServiceDefinition.builder(getServiceDescriptor())
-                {{#methods}}
-                .addMethod(
-                    get{{methodNamePascalCase}}Method(),
-                    ServerCalls.{{grpcCallsMethodName}}(
-                        MethodHandlers(this, METHODID_{{methodNameUpperUnderscore}})
-                    )
+    override fun bindService(): ServerServiceDefinition {
+        return ServerServiceDefinition.builder(getServiceDescriptor())
+            {{#methods}}
+            .addMethod(
+                get{{methodNamePascalCase}}Method(),
+                ServerCalls.{{grpcCallsMethodName}}(
+                    MethodHandlers(METHODID_{{methodNameUpperUnderscore}})
                 )
-                {{/methods}}
-                .build()
-        }
+            )
+            {{/methods}}
+            .build()
     }
 
     private fun unimplemented(methodDescriptor: MethodDescriptor<*, *>): Status {
@@ -165,11 +162,10 @@ object {{className}} {
     }
 
     {{#methods}}
-    private const val METHODID_{{methodNameUpperUnderscore}} = {{methodNumber}}
+    private val METHODID_{{methodNameUpperUnderscore}} = {{methodNumber}}
     {{/methods}}
 
-    private class MethodHandlers<Req, Resp> internal constructor(
-        private val serviceImpl: {{serviceName}}ImplBase,
+    private inner class MethodHandlers<Req, Resp> internal constructor(
         private val methodId: Int
     ) : ServerCalls.UnaryMethod<Req, Resp>,
         ServerCalls.ServerStreamingMethod<Req, Resp>,
@@ -182,7 +178,7 @@ object {{className}} {
                 {{#methods}}
                 {{^isManyInput}}
                 METHODID_{{methodNameUpperUnderscore}} ->
-                    serviceImpl.{{methodName}}Internal(
+                    this@{{serviceName}}ImplBase.{{methodName}}Internal(
                         request as {{inputType}},
                         responseObserver as StreamObserver<{{outputType}}>
                     )
@@ -198,7 +194,7 @@ object {{className}} {
                 {{#methods}}
                 {{#isManyInput}}
                 METHODID_{{methodNameUpperUnderscore}} ->
-                    return serviceImpl.{{methodName}}Internal(
+                    return this@{{serviceName}}ImplBase.{{methodName}}Internal(
                         responseObserver as StreamObserver<{{outputType}}>
                     ) as StreamObserver<Req>
                 {{/isManyInput}}
