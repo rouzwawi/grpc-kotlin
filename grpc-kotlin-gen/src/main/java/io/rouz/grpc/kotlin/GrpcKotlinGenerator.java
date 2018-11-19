@@ -53,7 +53,7 @@ public class GrpcKotlinGenerator extends Generator {
   private static final int METHOD_NUMBER_OF_PATHS = 4;
   private static final String CLASS_SUFFIX = "GrpcKt";
   private static final String STUB_SUFFIX = "StubExt";
-  private static final String ADAPTERS_FILE_PATH = "io/rouz/grpc/adapters.kt";
+  private static final String ADAPTERS_FILE_PATH = "io/rouz/grpc/Adapters.kt";
   private static final String SERVICE_JAVA_DOC_PREFIX = "    ";
   private static final String METHOD_JAVA_DOC_PREFIX = "        ";
 
@@ -178,7 +178,7 @@ public class GrpcKotlinGenerator extends Generator {
 
   private PluginProtos.CodeGeneratorResponse.File buildUtilFile() {
     UtilContext utilContext = new UtilContext();
-    String content = applyTemplate("adapters.mustache", utilContext);
+    String content = applyTemplate("Adapters.mustache", utilContext);
 
     return PluginProtos.CodeGeneratorResponse.File
         .newBuilder()
