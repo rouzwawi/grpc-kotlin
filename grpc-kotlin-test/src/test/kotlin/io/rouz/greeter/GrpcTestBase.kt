@@ -21,12 +21,10 @@
 package io.rouz.greeter
 
 import io.grpc.ClientInterceptor
-import io.grpc.ManagedChannel
-import io.grpc.Server
+import io.grpc.ClientInterceptors
 import io.grpc.ServerInterceptor
-import io.grpc.inprocess.InProcessChannelBuilder
-import io.grpc.inprocess.InProcessServerBuilder
-import io.grpc.testing.GrpcCleanupRule
+import io.grpc.ServerInterceptors
+import io.grpc.testing.GrpcServerRule
 import io.rouz.greeter.GreeterGrpc.GreeterStub
 import kotlinx.coroutines.CoroutineExceptionHandler
 import mu.KotlinLogging
@@ -38,9 +36,7 @@ open class GrpcTestBase {
 
     @Rule
     @JvmField
-    val grpcCleanup = GrpcCleanupRule()
-
-    private val serverName = InProcessServerBuilder.generateName()
+    val grpcServer: GrpcServerRule = GrpcServerRule().directExecutor()
 
     protected val seenExceptions = mutableListOf<Throwable>()
     protected val collectExceptions = CoroutineExceptionHandler { _, t ->
@@ -49,34 +45,19 @@ open class GrpcTestBase {
     }
 
     protected fun startServer(service: GreeterImplBase): GreeterStub {
-        grpcCleanup.register(
-            createServer(service)
-        )
+        val serviceDefinition = serverInterceptor()?.let {
+            ServerInterceptors.intercept(service, it)
+        } ?: service.bindService()
+        grpcServer.serviceRegistry.addService(serviceDefinition)
 
-        val channel = grpcCleanup.register(
-            createChannel()
-        )
+        val channel = clientInterceptor()?.let {
+            ClientInterceptors.intercept(grpcServer.channel, it)
+        } ?: grpcServer.channel
 
         return GreeterGrpc.newStub(channel)
     }
 
-    protected open fun createServer(service: GreeterImplBase): Server {
-        return InProcessServerBuilder.forName(serverName)
-            .directExecutor()
-            .addService(service)
-            .apply { serverInterceptor()?.also { intercept(it) } }
-            .build()
-            .start()
-    }
-
     protected open fun serverInterceptor(): ServerInterceptor? = null
-
-    protected open fun createChannel(): ManagedChannel {
-        return InProcessChannelBuilder.forName(serverName)
-            .directExecutor()
-            .apply { clientInterceptor()?.also { intercept(it) } }
-            .build()
-    }
 
     protected open fun clientInterceptor(): ClientInterceptor? = null
 
