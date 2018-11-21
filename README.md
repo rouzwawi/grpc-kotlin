@@ -13,6 +13,7 @@ gRPC Kotlin is a [protoc] plugin for generating native Kotlin bindings using [co
   * [Exception handling](#exception-handling)
   * [Maven configuration](#maven-configuration)
   * [Gradle configuration](#gradle-configuration)
+  * [Examples](#examples)
   * [RPC method type reference](#rpc-method-type-reference)
      * [Unary call](#unary-call)
         * [Service](#service)
@@ -399,6 +400,14 @@ dependencies {
     compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:kotlinCoroutinesVersion"
 }
 ```
+
+## Examples
+
+This is a list of example gRPC services and clients written using this project
+
+- [`grpc-kotlin-example-chatserver`](grpc-kotlin-example-chatserver)
+- [`kotlin-grpc-sample`](https://github.com/FlavioF/kotlin-grpc-sample)
+- [`grpc-death-star`](https://github.com/leveretka/grpc-death-star)
 
 ## RPC method type reference
 
