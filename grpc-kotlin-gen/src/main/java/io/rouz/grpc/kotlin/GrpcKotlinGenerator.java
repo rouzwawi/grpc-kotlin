@@ -50,6 +50,7 @@ import static com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse;
 
 public class GrpcKotlinGenerator extends Generator {
 
+  private static final int SERVICE_NUMBER_OF_PATHS = 2;
   private static final int METHOD_NUMBER_OF_PATHS = 4;
   private static final String CLASS_SUFFIX = "ImplBase";
   private static final String STUB_SUFFIX = "StubExt";
@@ -80,10 +81,10 @@ public class GrpcKotlinGenerator extends Generator {
     protos.forEach(fileProto -> {
       List<Location> locations = fileProto.getSourceCodeInfo().getLocationList();
       locations.stream()
-          .filter(location -> location.getPathCount() == 2
+          .filter(location -> location.getPathCount() == SERVICE_NUMBER_OF_PATHS
               && location.getPath(0) == FileDescriptorProto.SERVICE_FIELD_NUMBER)
           .forEach(location -> {
-            int serviceNumber = location.getPath(1);
+            int serviceNumber = location.getPath(SERVICE_NUMBER_OF_PATHS - 1);
             Context context = context(
                 fileProto.getService(serviceNumber), typeMap, locations, serviceNumber);
             context.javaDoc = getJavaDoc(getComments(location), SERVICE_JAVA_DOC_PREFIX);
