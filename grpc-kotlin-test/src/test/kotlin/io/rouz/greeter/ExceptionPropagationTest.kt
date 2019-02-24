@@ -166,7 +166,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
             throw broke("uni")
         }
 
-        override suspend fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
+        override fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
             throw broke("sstream")
         }
 
@@ -174,7 +174,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
             throw broke("cstream")
         }
 
-        override suspend fun greetBidirectional(requests: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
+        override fun greetBidirectional(requests: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
             throw broke("bidi")
         }
 

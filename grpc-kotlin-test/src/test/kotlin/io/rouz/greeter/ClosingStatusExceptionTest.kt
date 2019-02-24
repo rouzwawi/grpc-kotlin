@@ -36,7 +36,7 @@ class ClosingStatusExceptionTest : StatusExceptionTestBase() {
             throw notFound("uni")
         }
 
-        override suspend fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
+        override fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
             close(notFound("sstream"))
         }
 
@@ -44,7 +44,7 @@ class ClosingStatusExceptionTest : StatusExceptionTestBase() {
             throw notFound("cstream")
         }
 
-        override suspend fun greetBidirectional(requests: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
+        override fun greetBidirectional(requests: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
             close(notFound("bidi"))
         }
     }

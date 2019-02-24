@@ -44,7 +44,7 @@ class NoStatusExceptionPropagationTest : StatusExceptionTestBase() {
             throw notFound("uni")
         }
 
-        override suspend fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
+        override fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
             throw notFound("sstream")
         }
 
@@ -52,7 +52,7 @@ class NoStatusExceptionPropagationTest : StatusExceptionTestBase() {
             throw notFound("cstream")
         }
 
-        override suspend fun greetBidirectional(requests: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
+        override fun greetBidirectional(requests: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
             throw notFound("bidi")
         }
     }

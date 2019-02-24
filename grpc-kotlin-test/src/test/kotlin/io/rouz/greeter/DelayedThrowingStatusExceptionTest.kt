@@ -43,7 +43,7 @@ class DelayedThrowingStatusExceptionTest : StatusExceptionTestBase() {
             }.await()
         }
 
-        override suspend fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
+        override fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
             launch {
                 delay(10)
                 throw notFound("sstream")
@@ -57,7 +57,7 @@ class DelayedThrowingStatusExceptionTest : StatusExceptionTestBase() {
             }.await()
         }
 
-        override suspend fun greetBidirectional(requests: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
+        override fun greetBidirectional(requests: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
             launch {
                 delay(10)
                 throw notFound("bidi")

@@ -113,7 +113,7 @@ class GreeterImpl : GreeterImplBase(
   }
 
   // server streaming rpc
-  override suspend fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
+  override fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
     send(GreetReply.newBuilder()
         .setReply("Hello ${request.greeting}!")
         .build())
@@ -136,7 +136,7 @@ class GreeterImpl : GreeterImplBase(
   }
 
   // bidirectional rpc
-  override suspend fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
+  override fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
     var count = 0
 
     for (request in requestChannel) {
@@ -477,7 +477,7 @@ val responseMessage = call.await()
 Using `produce` and `send()` to send a stream of messages.
 
 ```kotlin
-override suspend fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
+override fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
   send( /* GreetReply message */ )
   send( /* GreetReply message */ )
   // ...
@@ -515,7 +515,7 @@ for (responseMessage in responses) {
 Using `produce` and `send()` to send a stream of messages. Receiving messages from a `ReceiveChannel<T>`.
 
 ```kotlin
-override suspend fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
+override fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
   // receive request messages
   val firstRequest = requestChannel.receive()
   send( /* GreetReply message */ )
