@@ -51,7 +51,7 @@ abstract class {{serviceName}}ImplBase(
     {{/isManyOutput}}
     {{#isManyOutput}}
     {{! == unary req, streaming resp == }}
-    open suspend fun {{methodName}}(request: {{inputType}}): ReceiveChannel<{{outputType}}> {
+    open fun {{methodName}}(request: {{inputType}}): ReceiveChannel<{{outputType}}> {
         throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
     }
 
@@ -92,7 +92,7 @@ abstract class {{serviceName}}ImplBase(
     {{/isManyOutput}}
     {{#isManyOutput}}
     {{! == streaming req, streaming resp == }}
-    open suspend fun {{methodName}}(requests: ReceiveChannel<{{inputType}}>): ReceiveChannel<{{outputType}}> {
+    open fun {{methodName}}(requests: ReceiveChannel<{{inputType}}>): ReceiveChannel<{{outputType}}> {
         throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
     }
 

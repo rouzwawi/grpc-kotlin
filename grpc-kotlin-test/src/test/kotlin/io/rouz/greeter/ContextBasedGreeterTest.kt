@@ -101,7 +101,7 @@ class ContextBasedGreeterTest : GrpcTestBase() {
             repl("Hello ${userContextKey.get() ?: "anonymous"}")
 
         @ExperimentalCoroutinesApi
-        override suspend fun greetServerStream(request: GreetRequest): ReceiveChannel<GreetReply> = produce {
+        override fun greetServerStream(request: GreetRequest): ReceiveChannel<GreetReply> = produce {
             for (i in 0..99) {
                 launch {
                     send(repl("Hi #$i ${userContextKey.get()} from ${Thread.currentThread().id}"))
