@@ -5,6 +5,31 @@
 
 gRPC Kotlin is a [protoc] plugin for generating native Kotlin bindings using [coroutine primitives] for [gRPC] services.
 
+  * [Why?](#why)
+  * [Quick start](#quick-start)
+     * [Server](#server)
+     * [Client](#client)
+  * [gRPC Context propagation](#grpc-context-propagation)
+  * [Exception handling](#exception-handling)
+  * [Maven configuration](#maven-configuration)
+  * [Gradle configuration](#gradle-configuration)
+  * [Examples](#examples)
+  * [RPC method type reference](#rpc-method-type-reference)
+     * [Unary call](#unary-call)
+        * [Service](#service)
+        * [Client](#client-1)
+     * [Client streaming call](#client-streaming-call)
+        * [Service](#service-1)
+        * [Client](#client-2)
+     * [Server streaming call](#server-streaming-call)
+        * [Service](#service-2)
+        * [Client](#client-3)
+     * [Full bidirectional streaming call](#full-bidirectional-streaming-call)
+        * [Service](#service-3)
+        * [Client](#client-4)
+
+---
+
 ## Why?
 
 The asynchronous nature of bidirectional streaming rpc calls in gRPC makes them a bit hard to implement
@@ -21,7 +46,7 @@ Enter Kotlin Coroutines! By generating native Kotlin stubs that allows us to use
 
 ## Quick start
 
-note: This has been tested with `gRPC 1.15.1`, `protobuf 3.5.1` and `kotlin 1.2.71`.
+note: This has been tested with `gRPC 1.18.0`, `protobuf 3.6.1`, `kotlin 1.3.21` and `coroutines 1.1.1`.
 
 Add a gRPC service definition to your project
 
@@ -50,78 +75,45 @@ service Greeter {
 }
 ```
 
-### Maven configuration
-
-Add the `grpc-kotlin-gen` plugin to your `protobuf-maven-plugin` configuration (see [using custom protoc plugins](https://www.xolstice.org/protobuf-maven-plugin/examples/protoc-plugin.html))
-
-```xml
-<protocPlugins>
-    <protocPlugin>
-        <id>GrpcKotlinGenerator</id>
-        <groupId>io.rouz</groupId>
-        <artifactId>grpc-kotlin-gen</artifactId>
-        <version>0.0.3</version>
-        <mainClass>io.rouz.grpc.kotlin.GrpcKotlinGenerator</mainClass>
-    </protocPlugin>
-</protocPlugins>
-```
-
-### Gradle configuration
-
-Add the `grpc-kotlin-gen` plugin to the plugins section of `protobuf-gradle-plugin`
-
-```gradle
-def protobufVersion = '3.5.1-1'
-def grpcVersion = '1.15.1'
-
-protobuf {
-    protoc {
-        // The artifact spec for the Protobuf Compiler
-        artifact = "com.google.protobuf:protoc:${protobufVersion}"
-    }
-    plugins {
-        grpc {
-            artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
-        }
-        grpckotlin {
-            artifact = "io.rouz:grpc-kotlin-gen:0.0.3:jdk8@jar"
-        }
-    }
-    generateProtoTasks {
-        all()*.plugins {
-            grpc {}
-            grpckotlin {}
-        }
-    }
-}
-```
+Run the protoc plugin to get the generated code, see [build tool configuration](#maven-configuration)
 
 ### Server
 
-After compilation, you'll find the generated Kotlin stubs in an `object` named `GreeterGrpcKt`. Both
-the service base class and client stub will use `suspend` and `ReceiveChannel<T>` instead of
-the typical `StreamObserver<T>` interfaces.
+After compilation, you'll find the generated Kotlin code in the same package as the generated Java
+code. A service base class named `GreeterImplBase` and a file with extension functions for the
+client stub named `GreeterStubExt.kt`. Both the service base class and client stub extensions will
+use `suspend` and `Channel<T>` instead of the typical `StreamObserver<T>` interfaces.
 
-Here's an example server that demonstrates how each type of endpoint is implemented, either as a
-[`suspend`] function for unary responses or using a [core coroutine primitives] like `produce` to
-create a `ReceiveChannel`. Other top level primitives like `delay` are available for use too. 
+All functions have the [`suspend`] modifier so they can call into any suspending code, including the
+[core coroutine primitives] like `delay` and `async`.
+
+All the server streaming calls return a `ReceiveChannel<TReply>` and can easily be implemented using
+`produce<TReply>`.
+
+All client streaming calls receive an argument of `ReceiveChannel<TRequest>` where they can `receive()`
+messages from the caller.
+
+Here's an example server that demonstrates how each type of endpoint is implemented.
 
 ```kotlin
-import kotlinx.coroutines.experimental.*
-import kotlinx.coroutines.experimental.channels.ReceiveChannel
-import kotlinx.coroutines.experimental.channels.produce
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.produce
+import java.util.concurrent.Executors.newFixedThreadPool
 
-class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
-    coroutineContext = newFixedThreadPoolContext(4, "server-pool")
+class GreeterImpl : GreeterImplBase(
+  coroutineContext = newFixedThreadPool(4).asCoroutineDispatcher()
 ) {
 
+  // unary rpc
   override suspend fun greet(request: GreetRequest): GreetReply {
     return GreetReply.newBuilder()
         .setReply("Hello " + request.greeting)
         .build()
   }
 
-  override suspend fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
+  // server streaming rpc
+  override fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
     send(GreetReply.newBuilder()
         .setReply("Hello ${request.greeting}!")
         .build())
@@ -130,6 +122,7 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
         .build())
   }
 
+  // client streaming rpc
   override suspend fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): GreetReply {
     val greetings = mutableListOf<String>()
 
@@ -142,7 +135,8 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
         .build()
   }
 
-  override suspend fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
+  // bidirectional rpc
+  override fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
     var count = 0
 
     for (request in requestChannel) {
@@ -160,20 +154,20 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
 
 ### Client
 
-The generated client stub is also fully implemented using `suspend`ing functions, `Deferred` and
-`SendChannel`.
+Extensions functions for the original Java stubs are generated that use `suspend` functions, `Deferred<TReply>`
+and `SendChannel<TRequest>`.
 
 ```kotlin
 import io.grpc.ManagedChannelBuilder
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 fun main(args: Array<String>) {
   val localhost = ManagedChannelBuilder.forAddress("localhost", 8080)
       .usePlaintext(true)
       .build()
-  val greeter = GreeterGrpcKt.newStub(localhost)
+  val greeter = GreeterGrpc.newStub(localhost)
 
   runBlocking {
     // === Unary call =============================================================================
@@ -223,7 +217,199 @@ fun main(args: Array<String>) {
 }
 ```
 
-## RCP method details
+## gRPC Context propagation
+
+gRPC has a thread-local [`Context`] which is used to carry scoped values across API boundaries. With Kotlin coroutines
+possibly being dispatched on multiple threads, the thread-local nature of `Context` needs some special care. This is
+solved by two details in the generated Kotlin code.
+
+First, all the generated service `*ImplBase` classes implement `CoroutineScope`. This allows you to use any of
+the top level coroutine primitives such as `launch`, `async` and `produce` in your service implementation while still
+keeping them within the context of your service code. The actual `CoroutineContext` that is used can be set through the
+base class constructor, but defaults to `Dispatchers.default`.
+
+```kotlin
+abstract class MyServiceImplBase(
+    coroutineContext: CoroutineContext = Dispatchers.Default
+)
+```
+
+Second, in the getter for `CoroutineScope.coroutineContext`, an additional context key is added to the
+`CoroutineContext` that manages the gRPC Context `attach()` and `detach()` calls when dispatching coroutine
+continuations. This will ensure that the the gRPC context is always propagated across different coroutine boundaries,
+and eliminates the need to manually carry it across in user code.
+
+Here's a simple example that makes calls to other services concurrently and expects an authenticated user to be present
+in the gRPC Context. The two accesses to the context key may execute on different threads in the `CoroutineContext` but
+the accesses work as expected.
+
+```kotlin
+val authenticatedUser = Context.key<User>("authenticatedUser")
+
+override suspend fun greet(request: GreetRequest): GreetReply {
+    val motd = async { messageOfTheDay.getMessage() }
+    val weatherReport = async { weather.getWeatherReport(authenticatedUser.get().location) }
+
+    val reply = buildString {
+        append("Hello ${authenticatedUser.get().fullName}")
+        append("---")
+        append("Today's weather report: ${weatherReport.await()}")
+        append("---")
+        append(motd.await())
+    }
+
+    return GreetReply.newBuilder()
+        .setReply(reply)
+        .build()
+}
+```
+
+For another example of gRPC Context usage, see the code in [ContextBasedGreeterTest](grpc-kotlin-test/src/test/kotlin/io/rouz/greeter/ContextBasedGreeterTest.kt)
+
+Thanks to [`wfhartford`](https://github.com/wfhartford) for contributing!
+
+## Exception handling
+
+The generated server code follows the standard exception propagation for Kotlin coroutines as described
+in the [Exception handling] documentation. This means that it's safe to throw exceptions from within
+the server implementation code. These will propagate up the coroutine scope and be translated to
+`responseObserver.onError(Throwable)` calls. The preferred way to respond with a status code is to
+throw a `StatusException`.
+
+Note that you should not call `close(Throwable)` or `close()` from within the `ProducerScope<T>`
+blocks you get from `produce` as the producer will automatically be closed when all sub-contexts are
+closed (or if an exception is thrown).
+
+## Maven configuration
+
+Add the `grpc-kotlin-gen` plugin to your `protobuf-maven-plugin` configuration (see [compile-custom goal](https://www.xolstice.org/protobuf-maven-plugin/compile-custom-mojo.html))
+
+```xml
+<plugin>
+  <groupId>org.xolstice.maven.plugins</groupId>
+  <artifactId>protobuf-maven-plugin</artifactId>
+  <version>0.6.1</version>
+  <configuration>
+    <protocArtifact>com.google.protobuf:protoc:3.5.1-1:exe:${os.detected.classifier}</protocArtifact>
+  </configuration>
+  <executions>
+    <execution>
+      <goals><goal>compile</goal></goals>
+    </execution>
+    <execution>
+      <id>grpc-java</id>
+      <goals><goal>compile-custom</goal></goals>
+      <configuration>
+        <pluginId>grpc-java</pluginId>
+        <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+      </configuration>
+    </execution>
+    <execution>
+      <id>grpc-kotlin</id>
+      <goals><goal>compile-custom</goal></goals>
+      <configuration>
+        <pluginId>grpc-kotlin</pluginId>
+        <pluginArtifact>io.rouz:grpc-kotlin-gen:0.1.0:jar:jdk8</pluginArtifact>
+      </configuration>
+    </execution>
+  </executions>
+</plugin>
+```
+
+_Note that this only works on unix like system at the moment._
+
+Add the kotlin dependencies
+
+```xml
+<dependency>
+  <groupId>org.jetbrains.kotlin</groupId>
+  <artifactId>kotlin-stdlib</artifactId>
+  <version>1.3.0</version>
+</dependency>
+<dependency>
+  <groupId>org.jetbrains.kotlinx</groupId>
+  <artifactId>kotlinx-coroutines-core</artifactId>
+  <version>1.0.0</version>
+</dependency>
+```
+
+Finally, make sure to add the generated source directories to the `kotlin-maven-plugin`
+
+```xml
+<plugin>
+  <artifactId>kotlin-maven-plugin</artifactId>
+  <groupId>org.jetbrains.kotlin</groupId>
+  <version>${kotlin.version}</version>
+  <executions>
+    <execution>
+      <id>compile</id>
+      <goals><goal>compile</goal></goals>
+      <configuration>
+        <sourceDirs>
+          <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+          <sourceDir>${project.basedir}/target/generated-sources/protobuf/grpc-kotlin</sourceDir>
+          <sourceDir>${project.basedir}/target/generated-sources/protobuf/grpc-java</sourceDir>
+          <sourceDir>${project.basedir}/target/generated-sources/protobuf/java</sourceDir>
+        </sourceDirs>
+      </configuration>
+    </execution>
+  </executions>
+</plugin>
+```
+
+## Gradle configuration
+
+Add the `grpc-kotlin-gen` plugin to the plugins section of `protobuf-gradle-plugin`
+
+```gradle
+def protobufVersion = '3.6.1'
+def grpcVersion = '1.15.1'
+
+protobuf {
+    protoc {
+        // The artifact spec for the Protobuf Compiler
+        artifact = "com.google.protobuf:protoc:${protobufVersion}"
+    }
+    plugins {
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
+        }
+        grpckotlin {
+            artifact = "io.rouz:grpc-kotlin-gen:0.1.0:jdk8@jar"
+        }
+    }
+    generateProtoTasks {
+        all()*.plugins {
+            grpc {}
+            grpckotlin {}
+        }
+    }
+}
+```
+
+_Note that this only works on unix like system at the moment._
+
+Add the kotlin dependencies
+
+```gradle
+def kotlinVersion = '1.3.0'
+def kotlinCoroutinesVersion = '1.0.0'
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:kotlinCoroutinesVersion"
+}
+```
+
+## Examples
+
+This is a list of example gRPC services and clients written using this project
+
+- [`grpc-kotlin-example-chatserver`](grpc-kotlin-example-chatserver)
+- [`kotlin-grpc-sample`](https://github.com/FlavioF/kotlin-grpc-sample)
+- [`grpc-death-star`](https://github.com/leveretka/grpc-death-star)
+
+## RPC method type reference
 
 ### Unary call
 
@@ -247,7 +433,7 @@ Suspendable call returning a single message.
 val response: GreetReply = stub.greet( /* GreetRequest */ )
 ```
 
-### Streaming request, Unary response
+### Client streaming call
 
 > `rpc GreetClientStream (stream GreetRequest) returns (GreetReply);`
 
@@ -282,21 +468,27 @@ call.close() //  don't forget to close the send channel
 val responseMessage = call.await()
 ```
 
-### Unary request, Streaming response
+### Server streaming call
 
 > `rpc GreetServerStream (GreetRequest) returns (stream GreetReply);`
 
 #### Service
 
-Using [`produce`] coroutine builder and `send` to return a stream of messages.
+Using `produce` and `send()` to send a stream of messages.
 
 ```kotlin
-override suspend fun greetServerStream(request: GreetRequest): ReceiveChannel<GreetReply> = produce {
+override fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
   send( /* GreetReply message */ )
   send( /* GreetReply message */ )
   // ...
 }
 ```
+
+Note that `close()` or `close(Throwable)` should not be used, see [Exception handling](#exception-handling).
+
+In `kotlinx-coroutines-core:1.0.0` `produce` is marked with `@ExperimentalCoroutinesApi`. In order
+to use it, mark your server class with `@UseExperimental(ExperimentalCoroutinesApi::class)` and
+add the `-Xuse-experimental=kotlin.Experimental` compiler flag.
 
 #### Client
 
@@ -314,16 +506,16 @@ for (responseMessage in responses) {
 }
 ```
 
-### Full bidirectional streaming
+### Full bidirectional streaming call
 
 > `rpc GreetBidirectional (stream GreetRequest) returns (stream GreetReply);`
 
 #### Service
 
-Using [`produce`] coroutine builder and `send` to return a stream of messages. Receiving messages from a `ReceiveChannel<T>`.
+Using `produce` and `send()` to send a stream of messages. Receiving messages from a `ReceiveChannel<T>`.
 
 ```kotlin
-override suspend fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>): ReceiveChannel<GreetReply> = produce {
+override fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
   // receive request messages
   val firstRequest = requestChannel.receive()
   send( /* GreetReply message */ )
@@ -334,6 +526,12 @@ override suspend fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequ
   // ...
 }
 ```
+
+Note that `close()` or `close(Throwable)` should not be used, see [Exception handling](#exception-handling).
+
+In `kotlinx-coroutines-core:1.0.0` `produce` is marked with `@ExperimentalCoroutinesApi`. In order
+to use it, mark your server class with `@UseExperimental(ExperimentalCoroutinesApi::class)` and
+add the `-Xuse-experimental=kotlin.Experimental` compiler flag.
 
 #### Client
 
@@ -358,9 +556,12 @@ call.close() //  don't forget to close the send channel
 [`suspend`]: https://kotlinlang.org/docs/reference/coroutines-overview.html
 [coroutine primitives]: https://github.com/Kotlin/kotlinx.coroutines
 [core coroutine primitives]: https://github.com/Kotlin/kotlinx.coroutines/blob/master/core/kotlinx-coroutines-core/README.md
+[Exception handling]: https://kotlinlang.org/docs/reference/coroutines/exception-handling.html
 [`Channel`]: https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental.channels/-channel/index.html
 [`Deferred`]: https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental/-deferred/index.html
 [`async`]: https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental/async.html
 [`produce`]: https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental.channels/produce.html
+[`Context`]: https://grpc.io/grpc-java/javadoc/io/grpc/Context.html
 [gRPC]: https://grpc.io/
 [reactive bindings]: https://github.com/salesforce/reactive-grpc
+

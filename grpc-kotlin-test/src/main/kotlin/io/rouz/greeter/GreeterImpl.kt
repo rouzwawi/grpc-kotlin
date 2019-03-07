@@ -20,18 +20,21 @@
 
 package io.rouz.greeter
 
-import kotlinx.coroutines.experimental.channels.ReceiveChannel
-import kotlinx.coroutines.experimental.channels.produce
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.newFixedThreadPoolContext
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.produce
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import java.util.concurrent.Executors.newFixedThreadPool
 
 /**
  * Implementation of coroutine-based gRPC service defined in greeter.proto
  */
-class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
-    coroutineContext = newFixedThreadPoolContext(4, "server-pool")
+@UseExperimental(ExperimentalCoroutinesApi::class)
+class GreeterImpl : GreeterImplBase(
+    coroutineContext = newFixedThreadPool(4, threadFactory("server-worker-%d")).asCoroutineDispatcher()
 ) {
 
     private val log = KotlinLogging.logger("server")
@@ -44,7 +47,7 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
             .build()
     }
 
-    override suspend fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
+    override fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
         log.info(request.greeting)
 
         send(
@@ -59,10 +62,10 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
         )
     }
 
-    override suspend fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): GreetReply {
+    override suspend fun greetClientStream(requests: ReceiveChannel<GreetRequest>): GreetReply {
         val greetings = mutableListOf<String>()
 
-        for (request in requestChannel) {
+        for (request in requests) {
             log.info(request.greeting)
             greetings.add(request.greeting)
         }
@@ -72,14 +75,14 @@ class GreeterImpl : GreeterGrpcKt.GreeterImplBase(
             .build()
     }
 
-    override suspend fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
+    override fun greetBidirectional(requests: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
         var count = 0
 
-        for (request in requestChannel) {
+        for (request in requests) {
             val n = count++
             log.info("$n ${request.greeting}")
             launch {
-                delay(1000)
+                delay(100)
                 send(
                     GreetReply.newBuilder()
                         .setReply("Yo #$n ${request.greeting}")

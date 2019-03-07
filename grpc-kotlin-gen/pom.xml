@@ -1,49 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>io.rouz</groupId>
-    <artifactId>grpc-kotlin-parent</artifactId>
-    <version>0.0.4-SNAPSHOT</version>
-  </parent>
+    <parent>
+        <groupId>io.rouz</groupId>
+        <artifactId>grpc-kotlin-parent</artifactId>
+        <version>0.1.1-SNAPSHOT</version>
+    </parent>
 
-  <artifactId>grpc-kotlin-gen</artifactId>
-  <packaging>jar</packaging>
+    <artifactId>grpc-kotlin-gen</artifactId>
+    <packaging>jar</packaging>
 
-  <name>grpc-kotlin-gen</name>
+    <name>grpc-kotlin-gen</name>
 
-  <dependencies>
-    <!-- scope : compile -->
-    <dependency>
-      <groupId>com.salesforce.servicelibs</groupId>
-      <artifactId>jprotoc</artifactId>
-      <version>0.7.1</version>
-    </dependency>
+    <dependencies>
+        <!-- scope : compile -->
+        <dependency>
+            <groupId>com.salesforce.servicelibs</groupId>
+            <artifactId>jprotoc</artifactId>
+            <version>0.9.1</version>
+        </dependency>
 
-    <!-- scope : test -->
-  </dependencies>
+        <!-- scope : test -->
+    </dependencies>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-maven-plugin</artifactId>
-        <version>1.5.8.RELEASE</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>repackage</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <mainClass>io.rouz.grpc.kotlin.GrpcKotlinGenerator</mainClass>
-          <layout>JAR</layout>
-          <classifier>jdk8</classifier>
-          <executable>true</executable>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>1.5.8.RELEASE</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <mainClass>io.rouz.grpc.kotlin.GrpcKotlinGenerator</mainClass>
+                    <layout>JAR</layout>
+                    <classifier>jdk8</classifier>
+                    <executable>true</executable>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

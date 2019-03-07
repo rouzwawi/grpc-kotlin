@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package io.rouz.grpc.examples.chat;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+option java_multiple_files = true;
+option java_package = "io.rouz.grpc.examples.chat";
+
+
+service ChatService {
+    rpc Chat (stream ChatMessage) returns (stream ChatMessageFromService);
+    rpc GetNames (google.protobuf.Empty) returns (ChatRoom);
+}
+
+message ChatRoom {
+    repeated string names = 1;
+}
+
+message ChatMessage {
+    string from = 1;
+    string message = 2;
+}
+
+message ChatMessageFromService {
+    google.protobuf.Timestamp timestamp = 1;
+    ChatMessage message = 2;
+}

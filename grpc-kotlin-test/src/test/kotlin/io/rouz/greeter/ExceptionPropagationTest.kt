@@ -20,18 +20,17 @@
 
 package io.rouz.greeter
 
-import io.grpc.Status
 import io.grpc.StatusRuntimeException
-import kotlinx.coroutines.experimental.CoroutineExceptionHandler
-import kotlinx.coroutines.experimental.Dispatchers
-import kotlinx.coroutines.experimental.channels.ReceiveChannel
-import kotlinx.coroutines.experimental.channels.produce
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.produce
+import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+import java.lang.Thread.sleep
 
 @RunWith(JUnit4::class)
 class ExceptionPropagationTest : GrpcTestBase() {
@@ -41,56 +40,8 @@ class ExceptionPropagationTest : GrpcTestBase() {
     val expect = ExpectedException.none()
 
     @Test
-    fun unaryStatus() {
-        val stub = startServer(StatusThrowingGreeter())
-
-        expect.expect(StatusRuntimeException::class.java)
-        expect.expectMessage("NOT_FOUND: neh")
-
-        runBlocking {
-            stub.greet(req("joe"))
-        }
-    }
-
-    @Test
-    fun serverStreamingStatus() {
-        val stub = startServer(StatusThrowingGreeter())
-
-        expect.expect(StatusRuntimeException::class.java)
-        expect.expectMessage("NOT_FOUND: neh")
-
-        runBlocking {
-            stub.greetServerStream(req("joe")).receive()
-        }
-    }
-
-    @Test
-    fun clientStreamingStatus() {
-        val stub = startServer(StatusThrowingGreeter())
-
-        expect.expect(StatusRuntimeException::class.java)
-        expect.expectMessage("NOT_FOUND: neh")
-
-        runBlocking {
-            stub.greetClientStream().await()
-        }
-    }
-
-    @Test
-    fun bidirectionalStatus() {
-        val stub = startServer(StatusThrowingGreeter())
-
-        expect.expect(StatusRuntimeException::class.java)
-        expect.expectMessage("NOT_FOUND: neh")
-
-        runBlocking {
-            stub.greetBidirectional().receive()
-        }
-    }
-
-    @Test
     fun unaryException() {
-        val stub = startServer(GenericThrowingGreeter())
+        val stub = startServer(CustomThrowingGreeter())
 
         expect.expect(StatusRuntimeException::class.java)
         expect.expectMessage("UNKNOWN")
@@ -102,7 +53,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
 
     @Test
     fun serverStreamingException() {
-        val stub = startServer(GenericThrowingGreeter())
+        val stub = startServer(CustomThrowingGreeter())
 
         expect.expect(StatusRuntimeException::class.java)
         expect.expectMessage("UNKNOWN")
@@ -114,7 +65,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
 
     @Test
     fun clientStreamingException() {
-        val stub = startServer(GenericThrowingGreeter())
+        val stub = startServer(CustomThrowingGreeter())
 
         expect.expect(StatusRuntimeException::class.java)
         expect.expectMessage("UNKNOWN")
@@ -126,7 +77,7 @@ class ExceptionPropagationTest : GrpcTestBase() {
 
     @Test
     fun bidirectionalException() {
-        val stub = startServer(GenericThrowingGreeter())
+        val stub = startServer(CustomThrowingGreeter())
 
         expect.expect(StatusRuntimeException::class.java)
         expect.expectMessage("UNKNOWN")
@@ -136,52 +87,101 @@ class ExceptionPropagationTest : GrpcTestBase() {
         }
     }
 
-    private class StatusThrowingGreeter : GreeterGrpcKt.GreeterImplBase() {
+    @Test
+    fun unaryPropagateCustomException() {
+        val stub = startServer(CustomThrowingGreeter())
 
-        override suspend fun greet(request: GreetRequest): GreetReply {
-            throw notFound()
+        expect.expect(CustomThrowingGreeter.CustomException::class.java)
+        expect.expectMessage("my app broke uni")
+
+        try {
+            runBlocking {
+                stub.greet(req("joe"))
+            }
+        } catch (t: Throwable) { // silence
         }
 
-        override suspend fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
-            throw notFound()
-        }
-
-        override suspend fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): GreetReply {
-            throw notFound()
-        }
-
-        override suspend fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
-            throw notFound()
-        }
-
-        private fun notFound(): StatusRuntimeException {
-            return Status.NOT_FOUND.withDescription("neh").asRuntimeException()
-        }
+        sleep(100) // wait for worker threads to invoke exception handler
+        throw seenExceptions[0]
     }
 
-    private class GenericThrowingGreeter : GreeterGrpcKt.GreeterImplBase(
-        Dispatchers.Default + CoroutineExceptionHandler { _, _ -> /* shh */ }
-    ) {
+    @Test
+    fun serverStreamingPropagateCustomException() {
+        val stub = startServer(CustomThrowingGreeter())
 
-        override suspend fun greet(request: GreetRequest): GreetReply {
-            throw broke()
+        expect.expect(CustomThrowingGreeter.CustomException::class.java)
+        expect.expectMessage("my app broke sstream")
+
+        try {
+            runBlocking {
+                stub.greetServerStream(req("jow")).receive()
+            }
+        } catch (t: Throwable) { // silence
         }
 
-        override suspend fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
-            throw broke()
-        }
-
-        override suspend fun greetClientStream(requestChannel: ReceiveChannel<GreetRequest>): GreetReply {
-            throw broke()
-        }
-
-        override suspend fun greetBidirectional(requestChannel: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
-            throw broke()
-        }
-
-        private fun broke(): Exception {
-            return Exception("my app broke")
-        }
+        sleep(100) // wait for worker threads to invoke exception handler
+        throw seenExceptions[0]
     }
 
+    @Test
+    fun clientStreamingPropagateCustomException() {
+        val stub = startServer(CustomThrowingGreeter())
+
+        expect.expect(CustomThrowingGreeter.CustomException::class.java)
+        expect.expectMessage("my app broke cstream")
+
+        try {
+            runBlocking {
+                stub.greetClientStream().await()
+            }
+        } catch (t: Throwable) { // silence
+        }
+
+        sleep(100) // wait for worker threads to invoke exception handler
+        throw seenExceptions[0]
+    }
+
+    @Test
+    fun bidirectionalPropagateCustomException() {
+        val stub = startServer(CustomThrowingGreeter())
+
+        expect.expect(CustomThrowingGreeter.CustomException::class.java)
+        expect.expectMessage("my app broke bidi")
+
+        try {
+            runBlocking {
+                stub.greetBidirectional().receive()
+            }
+        } catch (t: Throwable) { // silence
+        }
+
+        sleep(100) // wait for worker threads to invoke exception handler
+        throw seenExceptions[0]
+    }
+
+    @UseExperimental(ExperimentalCoroutinesApi::class)
+    private inner class CustomThrowingGreeter : GreeterImplBase(collectExceptions) {
+
+        override suspend fun greet(request: GreetRequest): GreetReply {
+            throw broke("uni")
+        }
+
+        override fun greetServerStream(request: GreetRequest) = produce<GreetReply> {
+            throw broke("sstream")
+        }
+
+        override suspend fun greetClientStream(requests: ReceiveChannel<GreetRequest>): GreetReply {
+            throw broke("cstream")
+        }
+
+        override fun greetBidirectional(requests: ReceiveChannel<GreetRequest>) = produce<GreetReply> {
+            throw broke("bidi")
+        }
+
+        private fun broke(description: String): Exception {
+            return CustomException("my app broke $description")
+        }
+
+        inner class CustomException(message: String) : Exception(message)
+    }
 }

@@ -1,71 +1,85 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>io.rouz</groupId>
-    <artifactId>root</artifactId>
-    <version>2</version>
-  </parent>
+    <parent>
+        <groupId>io.rouz</groupId>
+        <artifactId>root</artifactId>
+        <version>2</version>
+    </parent>
 
-  <artifactId>grpc-kotlin-parent</artifactId>
-  <version>0.0.4-SNAPSHOT</version>
-  <packaging>pom</packaging>
+    <artifactId>grpc-kotlin-parent</artifactId>
+    <version>0.1.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
 
-  <name>grpc-kotlin</name>
-  <url>https://github.com/rouzwawi/grpc-kotlin</url>
-
-  <licenses>
-    <license>
-      <name>The Apache Software License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-
-  <developers>
-    <developer>
-      <id>rouz</id>
-      <email>me@rouz.io</email>
-      <name>Rouzbeh Delavari</name>
-    </developer>
-  </developers>
-
-  <scm>
+    <name>grpc-kotlin</name>
     <url>https://github.com/rouzwawi/grpc-kotlin</url>
-    <connection>scm:git:git@github.com:rouzwawi/grpc-kotlin.git</connection>
-    <developerConnection>scm:git:git@github.com:rouzwawi/grpc-kotlin.git</developerConnection>
-    <tag>HEAD</tag>
-  </scm>
 
-  <properties>
-  </properties>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
-  <modules>
-    <module>grpc-kotlin-gen</module>
-    <module>grpc-kotlin-test</module>
-  </modules>
+    <developers>
+        <developer>
+            <id>rouz</id>
+            <email>me@rouz.io</email>
+            <name>Rouzbeh Delavari</name>
+        </developer>
+    </developers>
 
-  <dependencies>
-    <!-- scope : compile -->
+    <scm>
+        <url>https://github.com/rouzwawi/grpc-kotlin</url>
+        <connection>scm:git:git@github.com:rouzwawi/grpc-kotlin.git</connection>
+        <developerConnection>scm:git:git@github.com:rouzwawi/grpc-kotlin.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
 
-    <!-- scope : test -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.12</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+    <properties>
+    </properties>
 
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-enforcer-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <artifactId>maven-failsafe-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
+    <modules>
+        <module>grpc-kotlin-gen</module>
+        <module>grpc-kotlin-test</module>
+        <module>grpc-kotlin-example-chatserver</module>
+    </modules>
+
+    <dependencies>
+        <!-- scope : compile -->
+
+        <!-- scope : test -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-enforcer-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-failsafe-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.1.0</version>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <forkCount>0</forkCount>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

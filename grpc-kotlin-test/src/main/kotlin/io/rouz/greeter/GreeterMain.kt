@@ -20,12 +20,14 @@
 
 package io.rouz.greeter
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder
 import io.grpc.ManagedChannelBuilder
 import io.grpc.ServerBuilder
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import java.util.concurrent.ThreadFactory
 
 fun main(args: Array<String>) {
     val log = KotlinLogging.logger("client")
@@ -37,7 +39,7 @@ fun main(args: Array<String>) {
         .usePlaintext()
         .build()
 
-    val greeter = GreeterGrpcKt.newStub(localhost)
+    val greeter = GreeterGrpc.newStub(localhost)
 
     runBlocking {
         // === Unary call =============================================================================
@@ -88,3 +90,8 @@ fun main(args: Array<String>) {
 fun req(greeting: String): GreetRequest {
     return GreetRequest.newBuilder().setGreeting(greeting).build()
 }
+
+fun threadFactory(threadNameFormat: String): ThreadFactory = ThreadFactoryBuilder()
+    .setDaemon(true)
+    .setNameFormat(threadNameFormat)
+    .build()

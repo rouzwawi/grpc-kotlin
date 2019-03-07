@@ -27,31 +27,34 @@
 
 package io.rouz.grpc.kotlin;
 
-import static com.google.protobuf.DescriptorProtos.FileDescriptorProto;
-import static com.google.protobuf.DescriptorProtos.FileOptions;
-import static com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
-import static com.google.protobuf.compiler.PluginProtos.CodeGeneratorRequest;
-import static com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse;
-
 import com.google.common.base.Strings;
 import com.google.common.html.HtmlEscapers;
+import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
+import com.google.protobuf.DescriptorProtos.FileOptions;
 import com.google.protobuf.DescriptorProtos.MethodDescriptorProto;
+import com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
 import com.google.protobuf.DescriptorProtos.SourceCodeInfo.Location;
 import com.google.protobuf.compiler.PluginProtos;
 import com.salesforce.jprotoc.Generator;
 import com.salesforce.jprotoc.GeneratorException;
 import com.salesforce.jprotoc.ProtoTypeMap;
 import com.salesforce.jprotoc.ProtocPlugin;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import static com.google.protobuf.compiler.PluginProtos.CodeGeneratorRequest;
+import static com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse;
 
 public class GrpcKotlinGenerator extends Generator {
 
+  private static final int SERVICE_NUMBER_OF_PATHS = 2;
   private static final int METHOD_NUMBER_OF_PATHS = 4;
-  private static final String CLASS_SUFFIX = "GrpcKt";
+  private static final String CLASS_SUFFIX = "ImplBase";
+  private static final String STUB_SUFFIX = "StubExt";
+  private static final String ADAPTERS_FILE_PATH = "io/rouz/grpc/Adapters.kt";
   private static final String SERVICE_JAVA_DOC_PREFIX = "    ";
   private static final String METHOD_JAVA_DOC_PREFIX = "        ";
 
@@ -60,7 +63,7 @@ public class GrpcKotlinGenerator extends Generator {
   }
 
   @Override
-  public Stream<CodeGeneratorResponse.File> generate(CodeGeneratorRequest request)
+  public List<CodeGeneratorResponse.File> generateFiles(CodeGeneratorRequest request)
       throws GeneratorException {
     final ProtoTypeMap typeMap = ProtoTypeMap.of(request.getProtoFileList());
 
@@ -69,9 +72,7 @@ public class GrpcKotlinGenerator extends Generator {
         .collect(Collectors.toList());
 
     List<Context> services = findServices(protosToGenerate, typeMap);
-    List<PluginProtos.CodeGeneratorResponse.File> files = generateFiles(services);
-    return files.stream();
-
+    return generateFiles(services);
   }
 
   private List<Context> findServices(List<FileDescriptorProto> protos, ProtoTypeMap typeMap) {
@@ -80,10 +81,10 @@ public class GrpcKotlinGenerator extends Generator {
     protos.forEach(fileProto -> {
       List<Location> locations = fileProto.getSourceCodeInfo().getLocationList();
       locations.stream()
-          .filter(location -> location.getPathCount() == 2
+          .filter(location -> location.getPathCount() == SERVICE_NUMBER_OF_PATHS
               && location.getPath(0) == FileDescriptorProto.SERVICE_FIELD_NUMBER)
           .forEach(location -> {
-            int serviceNumber = location.getPath(1);
+            int serviceNumber = location.getPath(SERVICE_NUMBER_OF_PATHS - 1);
             Context context = context(
                 fileProto.getService(serviceNumber), typeMap, locations, serviceNumber);
             context.javaDoc = getJavaDoc(getComments(location), SERVICE_JAVA_DOC_PREFIX);
@@ -115,8 +116,6 @@ public class GrpcKotlinGenerator extends Generator {
       int serviceNumber) {
 
     Context context = new Context();
-    context.fileName = serviceProto.getName() + CLASS_SUFFIX + ".kt";
-    context.className = serviceProto.getName() + CLASS_SUFFIX;
     context.serviceName = serviceProto.getName();
     context.deprecated = serviceProto.getOptions() != null
         && serviceProto.getOptions().getDeprecated();
@@ -166,26 +165,54 @@ public class GrpcKotlinGenerator extends Generator {
   }
 
   private List<PluginProtos.CodeGeneratorResponse.File> generateFiles(List<Context> services) {
-    return services.stream()
-        .map(this::buildFile)
-        .collect(Collectors.toList());
+    List<PluginProtos.CodeGeneratorResponse.File> files = new ArrayList<>();
+
+    files.add(buildUtilFile());
+    for (Context service : services) {
+      files.add(buildServiceBaseImpl(service));
+      files.add(buildStubExtensions(service));
+    }
+
+    return files;
   }
 
-  private PluginProtos.CodeGeneratorResponse.File buildFile(Context context) {
-    String content = applyTemplate("KtStub.mustache", context);
+  private PluginProtos.CodeGeneratorResponse.File buildUtilFile() {
+    UtilContext utilContext = new UtilContext();
+    String content = applyTemplate("Adapters.mustache", utilContext);
+
     return PluginProtos.CodeGeneratorResponse.File
         .newBuilder()
-        .setName(absoluteFileName(context))
+        .setName(ADAPTERS_FILE_PATH)
         .setContent(content)
         .build();
   }
 
-  private String absoluteFileName(Context ctx) {
-    String dir = ctx.packageName.replace('.', '/');
+  private PluginProtos.CodeGeneratorResponse.File buildServiceBaseImpl(Context context) {
+    String content = applyTemplate("ImplBase.mustache", context);
+    String fileName = context.serviceName + CLASS_SUFFIX + ".kt";
+    return PluginProtos.CodeGeneratorResponse.File
+        .newBuilder()
+        .setName(absoluteFileName(context.packageName, fileName))
+        .setContent(content)
+        .build();
+  }
+
+  private PluginProtos.CodeGeneratorResponse.File buildStubExtensions(Context context) {
+    String content = applyTemplate("StubExtensions.mustache", context);
+    String fileName = context.serviceName + STUB_SUFFIX + ".kt";
+    return PluginProtos.CodeGeneratorResponse.File
+        .newBuilder()
+        .setName(absoluteFileName(context.packageName, fileName))
+        .setContent(content)
+        .build();
+  }
+
+  private String absoluteFileName(String packageName, String fileName) {
+    String dir = packageName.replace('.', '/');
     if (Strings.isNullOrEmpty(dir)) {
-      return ctx.fileName;
+      return fileName;
     } else {
-      return dir + "/" + ctx.fileName;
+      return dir + "/" + fileName;
     }
   }
 
@@ -213,11 +240,9 @@ public class GrpcKotlinGenerator extends Generator {
    * Template class for proto Service objects.
    */
   private class Context {
-    // CHECKSTYLE DISABLE VisibilityModifier FOR 8 LINES
-    public String fileName;
+    // CHECKSTYLE DISABLE VisibilityModifier FOR 6 LINES
     public String protoName;
     public String packageName;
-    public String className;
     public String serviceName;
     public boolean deprecated;
     public String javaDoc;
@@ -258,5 +283,11 @@ public class GrpcKotlinGenerator extends Generator {
     public String methodNamePascalCase() {
       return String.valueOf(Character.toUpperCase(methodName.charAt(0))) + methodName.substring(1);
     }
+  }
+
+  /**
+   * Template class for adapters file.
+   */
+  private class UtilContext {
   }
 }

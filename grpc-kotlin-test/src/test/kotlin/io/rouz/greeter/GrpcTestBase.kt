@@ -20,40 +20,52 @@
 
 package io.rouz.greeter
 
-import io.grpc.inprocess.InProcessChannelBuilder
-import io.grpc.inprocess.InProcessServerBuilder
-import io.grpc.testing.GrpcCleanupRule
-import io.rouz.greeter.GreeterGrpcKt.GreeterImplBase
-import io.rouz.greeter.GreeterGrpcKt.GreeterKtStub
+import io.grpc.ClientInterceptor
+import io.grpc.ClientInterceptors
+import io.grpc.ServerInterceptor
+import io.grpc.ServerInterceptors
+import io.grpc.testing.GrpcServerRule
+import io.rouz.greeter.GreeterGrpc.GreeterStub
+import kotlinx.coroutines.CoroutineExceptionHandler
+import mu.KotlinLogging
 import org.junit.Rule
 
 open class GrpcTestBase {
 
+    val log = KotlinLogging.logger("GreeterImplBase")
+
     @Rule
     @JvmField
-    val grpcCleanup = GrpcCleanupRule()
+    val grpcServer: GrpcServerRule = GrpcServerRule().directExecutor()
 
-    private val serverName = InProcessServerBuilder.generateName()
-
-    protected fun startServer(service: GreeterImplBase): GreeterKtStub {
-        grpcCleanup.register(
-            InProcessServerBuilder.forName(serverName)
-                .directExecutor()
-                .addService(service)
-                .build()
-                .start()
-        )
-
-        val channel = grpcCleanup.register(
-            InProcessChannelBuilder.forName(serverName)
-                .directExecutor()
-                .build()
-        )
-
-        return GreeterGrpcKt.newStub(channel)
+    protected val seenExceptions = mutableListOf<Throwable>()
+    protected val collectExceptions = CoroutineExceptionHandler { _, t ->
+        seenExceptions += t
+        log.info("Caught exception in exception handler: $t")
     }
+
+    protected fun startServer(service: GreeterImplBase): GreeterStub {
+        val serviceDefinition = serverInterceptor()?.let {
+            ServerInterceptors.intercept(service, it)
+        } ?: service.bindService()
+        grpcServer.serviceRegistry.addService(serviceDefinition)
+
+        val channel = clientInterceptor()?.let {
+            ClientInterceptors.intercept(grpcServer.channel, it)
+        } ?: grpcServer.channel
+
+        return GreeterGrpc.newStub(channel)
+    }
+
+    protected open fun serverInterceptor(): ServerInterceptor? = null
+
+    protected open fun clientInterceptor(): ClientInterceptor? = null
 
     fun req(greeting: String): GreetRequest {
         return GreetRequest.newBuilder().setGreeting(greeting).build()
+    }
+
+    fun repl(reply: String): GreetReply {
+        return GreetReply.newBuilder().setReply(reply).build()
     }
 }
