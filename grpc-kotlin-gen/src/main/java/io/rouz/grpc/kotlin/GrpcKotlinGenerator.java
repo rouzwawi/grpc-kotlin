@@ -227,6 +227,10 @@ public class GrpcKotlinGenerator extends Generator {
       StringBuilder builder = new StringBuilder("/**\n")
           .append(prefix).append(" * <pre>\n");
       Arrays.stream(HtmlEscapers.htmlEscaper().escape(comments).split("\n"))
+          // Kotlin allows nested block comments, so any occurrence of '/*' would begin
+          // a nested block, breaking the generated code.
+          .map(line -> line.replace("/*", "/&#42;"))
+          .map(line -> line.replace("*/", "*&#47;"))
           .forEach(line -> builder.append(prefix).append(" * ").append(line).append("\n"));
       builder
           .append(prefix).append(" * <pre>\n")
