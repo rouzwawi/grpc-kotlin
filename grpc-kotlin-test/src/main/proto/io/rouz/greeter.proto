@@ -13,6 +13,9 @@ message GreetReply {
 }
 
 service Greeter {
+    // Adding some comments to ensure correct parsing with respect to kotlin nested block comments
+    // /* That should get escaped so that it doesn't start a block comment
+    // */ That should also get escaped so that it doesn't terminate a javadoc comment block
     rpc Greet (GreetRequest) returns (GreetReply);
     rpc GreetServerStream (GreetRequest) returns (stream GreetReply);
     rpc GreetClientStream (stream GreetRequest) returns (GreetReply);
