@@ -38,15 +38,15 @@ with the method argument being the response observer and the return value being 
 feels a bit backwards to what a plain old synchronous version of the handler would look like.
 
 In situations where you'd want to coordinate several request and response messages in one call, you'll and up
-having to manage some tricky state and synchronization between the observers. There's some [reactive bindings]
+having to manage some tricky state and synchronization between the observers. There are [reactive bindings]
 for gRPC which make this easier. But I think we can do better!
 
 Enter Kotlin Coroutines! By generating native Kotlin stubs that allows us to use [`suspend`] functions and 
-[`Channel`], we can write our handler and client code in idiomatic and easy to read Kotlin style.
+[`Channel`], we can write our handler and client code in an idiomatic and easy to read Kotlin style.
 
 ## Quick start
 
-note: This has been tested with `gRPC 1.18.0`, `protobuf 3.6.1`, `kotlin 1.3.21` and `coroutines 1.1.1`.
+Note: This has been tested with `gRPC 1.18.0`, `protobuf 3.6.1`, `kotlin 1.3.21` and `coroutines 1.1.1`.
 
 Add a gRPC service definition to your project
 
