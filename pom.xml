@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>grpc-kotlin-parent</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>grpc-kotlin</name>
@@ -35,7 +35,7 @@
         <url>https://github.com/rouzwawi/grpc-kotlin</url>
         <connection>scm:git:git@github.com:rouzwawi/grpc-kotlin.git</connection>
         <developerConnection>scm:git:git@github.com:rouzwawi/grpc-kotlin.git</developerConnection>
-        <tag>v0.1.1</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <properties>
