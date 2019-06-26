@@ -42,20 +42,20 @@ class ChatService : ChatServiceImplBase() {
             .build()
     }
 
-    override suspend fun chat(requests: ReceiveChannel<ChatMessage>): ReceiveChannel<ChatMessageFromService> {
+    override fun chat(requests: ReceiveChannel<ChatMessage>): ReceiveChannel<ChatMessageFromService> {
         val channel = Channel<ChatMessageFromService>(Channel.UNLIMITED)
-        println("New client connection: $channel")
-
-        // wait for first message
-        val hello = requests.receive()
-        val name = hello.from
-        val client = Client(name, channel)
-        clientChannels.add(client)
         channel.invokeOnClose {
             it?.printStackTrace()
         }
+        println("New client connection: $channel")
 
         launch {
+            // wait for first message
+            val hello = requests.receive()
+            val name = hello.from
+            val client = Client(name, channel)
+            clientChannels.add(client)
+
             try {
                 for (chatMessage in requests) {
                     println("Got request from $requests:")
