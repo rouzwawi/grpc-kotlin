@@ -428,7 +428,7 @@ def kotlinCoroutinesVersion = '1.2.2'
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:kotlinCoroutinesVersion"
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion"
 }
 ```
 
