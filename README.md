@@ -165,7 +165,7 @@ import kotlinx.coroutines.runBlocking
 
 fun main(args: Array<String>) {
   val localhost = ManagedChannelBuilder.forAddress("localhost", 8080)
-      .usePlaintext(true)
+      .usePlaintext()
       .build()
   val greeter = GreeterGrpc.newStub(localhost)
 
