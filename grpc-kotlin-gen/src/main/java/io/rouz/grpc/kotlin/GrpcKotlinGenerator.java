@@ -27,6 +27,7 @@
 
 package io.rouz.grpc.kotlin;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.html.HtmlEscapers;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
@@ -197,7 +198,7 @@ public class GrpcKotlinGenerator extends Generator {
         .build();
   }
 
-  private PluginProtos.CodeGeneratorResponse.File buildStubExtensions(Context context) {
+    PluginProtos.CodeGeneratorResponse.File buildStubExtensions(Context context) {
     String content = applyTemplate("StubExtensions.mustache", context);
     String fileName = context.serviceName + STUB_SUFFIX + ".kt";
     return PluginProtos.CodeGeneratorResponse.File
@@ -207,7 +208,8 @@ public class GrpcKotlinGenerator extends Generator {
         .build();
   }
 
-  private String absoluteFileName(String packageName, String fileName) {
+    private static String absoluteFileName(String packageName, String fileName) {
+        Preconditions.checkNotNull(packageName, "packageName");
     String dir = packageName.replace('.', '/');
     if (Strings.isNullOrEmpty(dir)) {
       return fileName;
@@ -243,7 +245,7 @@ public class GrpcKotlinGenerator extends Generator {
   /**
    * Template class for proto Service objects.
    */
-  private class Context {
+  protected final class Context {
     // CHECKSTYLE DISABLE VisibilityModifier FOR 6 LINES
     public String protoName;
     public String packageName;

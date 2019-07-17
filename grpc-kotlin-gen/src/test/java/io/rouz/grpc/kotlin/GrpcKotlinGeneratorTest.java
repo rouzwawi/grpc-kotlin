@@ -21,11 +21,31 @@
 package io.rouz.grpc.kotlin;
 
 
+import com.google.protobuf.compiler.PluginProtos;
 import org.junit.Test;
 
-public class GrpcKotlinGeneratorTest {
+import static org.junit.Assert.assertTrue;
+
+public class GrpcKotlinGeneratorTest extends GrpcKotlinGenerator {
 
   @Test
-  public void empty() {
+  public void buildStubExtensionsTest() {
+    Context ctx = new Context();
+    ctx.packageName = "some.package";
+    ctx.serviceName = "SomeService";
+    PluginProtos.CodeGeneratorResponse.File result = this.buildStubExtensions(ctx);
+
+    String expected = "fun SomeServiceStub.addBinaryHeader(\n" +
+            "    header: String,\n" +
+            "    bytes: ByteArray\n" +
+            "): SomeServiceStub {\n" +
+            "    val headers = Metadata()\n" +
+            "    val key = Metadata.Key.of(header, Metadata.BINARY_BYTE_MARSHALLER)\n" +
+            "    headers.put(key, bytes)\n" +
+            "\n" +
+            "    return MetadataUtils.attachHeaders(this, headers)\n" +
+            "}";
+
+    assertTrue(result.getContent().contains(expected));
   }
 }
