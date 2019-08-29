@@ -63,12 +63,12 @@ fun {{serviceName}}Stub.{{methodName}}(): ManyToManyCall<{{inputType}}, {{output
 * Adds new binary header and returns the client
 */
 fun {{serviceName}}Stub.addBinaryHeader(
-header: String,
-bytes: ByteArray
+    header: String,
+    bytes: ByteArray
 ): {{serviceName}}Stub {
-val headers = Metadata()
-val key = Metadata.Key.of(header, Metadata.BINARY_BYTE_MARSHALLER)
-headers.put(key, bytes)
+    val headers = Metadata()
+    val key = Metadata.Key.of(header, Metadata.BINARY_BYTE_MARSHALLER)
+    headers.put(key, bytes)
 
-return MetadataUtils.attachHeaders(this, headers)
+    return MetadataUtils.attachHeaders(this, headers)
 }
