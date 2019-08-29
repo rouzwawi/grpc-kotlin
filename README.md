@@ -165,7 +165,7 @@ import kotlinx.coroutines.runBlocking
 
 fun main(args: Array<String>) {
   val localhost = ManagedChannelBuilder.forAddress("localhost", 8080)
-      .usePlaintext(true)
+      .usePlaintext()
       .build()
   val greeter = GreeterGrpc.newStub(localhost)
 
@@ -428,7 +428,7 @@ def kotlinCoroutinesVersion = '1.2.2'
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:kotlinCoroutinesVersion"
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion"
 }
 ```
 

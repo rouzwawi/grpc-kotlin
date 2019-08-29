@@ -8,6 +8,9 @@ import {{packageName}}.{{serviceName}}Grpc.{{serviceName}}Stub
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlin.coroutines.suspendCoroutine
 
+import io.grpc.Metadata
+import io.grpc.stub.MetadataUtils
+
 /**
  * Kotlin extension functions for [{{packageName}}.{{serviceName}}Grpc.{{serviceName}}Stub]
  *
@@ -21,7 +24,7 @@ import kotlin.coroutines.suspendCoroutine
 {{^isManyInput}}
 {{^isManyOutput}}
 {{! == unary req, unary resp == }}
-inline suspend fun {{serviceName}}Stub.{{methodName}}(request: {{inputType}}): {{outputType}} {
+suspend inline fun {{serviceName}}Stub.{{methodName}}(request: {{inputType}}): {{outputType}} {
     return suspendCoroutine {
         {{methodName}}(request, ContinuationStreamObserver(it))
     }
@@ -55,3 +58,17 @@ fun {{serviceName}}Stub.{{methodName}}(): ManyToManyCall<{{inputType}}, {{output
 {{/isManyOutput}}
 {{/isManyInput}}
 {{/methods}}
+
+/**
+* Adds new binary header and returns the client
+*/
+fun {{serviceName}}Stub.addBinaryHeader(
+header: String,
+bytes: ByteArray
+): {{serviceName}}Stub {
+val headers = Metadata()
+val key = Metadata.Key.of(header, Metadata.BINARY_BYTE_MARSHALLER)
+headers.put(key, bytes)
+
+return MetadataUtils.attachHeaders(this, headers)
+}
