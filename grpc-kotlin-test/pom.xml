@@ -115,7 +115,7 @@
                         </goals>
                         <configuration>
                             <pluginId>grpc-kotlin</pluginId>
-                            <pluginArtifact>io.rouz:grpc-kotlin-gen:${project.version}:jar:jdk8</pluginArtifact>
+                            <pluginArtifact>io.rouz:grpc-kotlin-gen:${project.version}:exe:${os.detected.classifier}</pluginArtifact>
                         </configuration>
                     </execution>
                 </executions>

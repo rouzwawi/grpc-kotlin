@@ -44,7 +44,7 @@
     <modules>
         <module>grpc-kotlin-gen</module>
         <module>grpc-kotlin-test</module>
-        <module>grpc-kotlin-example-chatserver</module>
+<!--        <module>grpc-kotlin-example-chatserver</module>-->
     </modules>
 
     <dependencies>

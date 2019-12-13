@@ -357,7 +357,7 @@ _Note that this only works on unix like system at the moment._
           <goals><goal>compile-custom</goal></goals>
           <configuration>
             <pluginId>grpc-kotlin</pluginId>
-            <pluginArtifact>io.rouz:grpc-kotlin-gen:${grpc-kotlin.version}:jar:jdk8</pluginArtifact>
+            <pluginArtifact>io.rouz:grpc-kotlin-gen:${grpc-kotlin.version}:exe:${os.detected.classifier}</pluginArtifact>
           </configuration>
         </execution>
       </executions>
@@ -406,7 +406,7 @@ protobuf {
             artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
         }
         grpckotlin {
-            artifact = "io.rouz:grpc-kotlin-gen:${grpcKotlinVersion}:jdk8@jar"
+            artifact = "io.rouz:grpc-kotlin-gen:${grpcKotlinVersion}"
         }
     }
     generateProtoTasks {
