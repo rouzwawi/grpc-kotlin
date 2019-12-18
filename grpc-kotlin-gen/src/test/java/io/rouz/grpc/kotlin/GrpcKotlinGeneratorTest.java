@@ -46,6 +46,7 @@ public class GrpcKotlinGeneratorTest extends GrpcKotlinGenerator {
             "    return MetadataUtils.attachHeaders(this, headers)\n" +
             "}";
 
-    assertTrue(result.getContent().contains(expected));
+    String resultContent = result.getContent().replaceAll("\\r", "");
+    assertTrue(resultContent.contains(expected));
   }
 }

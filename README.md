@@ -284,8 +284,6 @@ closed (or if an exception is thrown).
 
 Add the `grpc-kotlin-gen` plugin to your `protobuf-maven-plugin` configuration (see [compile-custom goal](https://www.xolstice.org/protobuf-maven-plugin/compile-custom-mojo.html))
 
-_Note that this only works on unix like system at the moment._
-
 ```xml
 <properties>
   <kotlin.version>1.3.40</kotlin.version>
@@ -357,7 +355,7 @@ _Note that this only works on unix like system at the moment._
           <goals><goal>compile-custom</goal></goals>
           <configuration>
             <pluginId>grpc-kotlin</pluginId>
-            <pluginArtifact>io.rouz:grpc-kotlin-gen:${grpc-kotlin.version}:jar:jdk8</pluginArtifact>
+            <pluginArtifact>io.rouz:grpc-kotlin-gen:${grpc-kotlin.version}:exe:${os.detected.classifier}</pluginArtifact>
           </configuration>
         </execution>
       </executions>
@@ -406,7 +404,7 @@ protobuf {
             artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
         }
         grpckotlin {
-            artifact = "io.rouz:grpc-kotlin-gen:${grpcKotlinVersion}:jdk8@jar"
+            artifact = "io.rouz:grpc-kotlin-gen:${grpcKotlinVersion}"
         }
     }
     generateProtoTasks {
@@ -417,8 +415,6 @@ protobuf {
     }
 }
 ```
-
-_Note that this only works on unix like system at the moment._
 
 Add the kotlin dependencies
 
