@@ -40,7 +40,6 @@
                 <configuration>
                     <mainClass>io.rouz.grpc.kotlin.GrpcKotlinGenerator</mainClass>
                     <layout>JAR</layout>
-                    <classifier>jdk8</classifier>
                 </configuration>
             </plugin>
             <plugin>
@@ -54,9 +53,6 @@
                         </goals>
                     </execution>
                 </executions>
-                <configuration>
-                    <classifier>jdk8</classifier>
-                </configuration>
             </plugin>
         </plugins>
     </build>
