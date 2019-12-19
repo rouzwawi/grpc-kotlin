@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>grpc-kotlin-parent</artifactId>
-    <version>0.1.3-SNAPSHOT</version>
+    <version>0.1.4-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>grpc-kotlin</name>

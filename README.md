@@ -46,7 +46,7 @@ Enter Kotlin Coroutines! By generating native Kotlin stubs that allows us to use
 
 ## Quick start
 
-Note: This has been tested with `gRPC 1.21.0`, `protobuf 3.7.1`, `kotlin 1.3.40` and `coroutines 1.2.2`.
+Note: This has been tested with `gRPC 1.25.0`, `protobuf 3.10.0`, `kotlin 1.3.61` and `coroutines 1.3.3`.
 
 Add a gRPC service definition to your project
 
@@ -284,15 +284,13 @@ closed (or if an exception is thrown).
 
 Add the `grpc-kotlin-gen` plugin to your `protobuf-maven-plugin` configuration (see [compile-custom goal](https://www.xolstice.org/protobuf-maven-plugin/compile-custom-mojo.html))
 
-_Note that this only works on unix like system at the moment._
-
 ```xml
 <properties>
-  <kotlin.version>1.3.40</kotlin.version>
-  <kotlinx-coroutines.version>1.2.2</kotlinx-coroutines.version>
-  <grpc.version>1.21.0</grpc.version>
-  <protobuf.version>3.7.1</protobuf.version>
-  <grpc-kotlin.version>0.1.1</grpc-kotlin.version>
+  <kotlin.version>1.3.61</kotlin.version>
+  <kotlinx-coroutines.version>1.3.3</kotlinx-coroutines.version>
+  <grpc.version>1.25.0</grpc.version>
+  <protobuf.version>3.10.0</protobuf.version>
+  <grpc-kotlin.version>0.1.3</grpc-kotlin.version>
 </properties>
 
 <dependencies>
@@ -357,7 +355,7 @@ _Note that this only works on unix like system at the moment._
           <goals><goal>compile-custom</goal></goals>
           <configuration>
             <pluginId>grpc-kotlin</pluginId>
-            <pluginArtifact>io.rouz:grpc-kotlin-gen:${grpc-kotlin.version}:jar:jdk8</pluginArtifact>
+            <pluginArtifact>io.rouz:grpc-kotlin-gen:${grpc-kotlin.version}:exe:${os.detected.classifier}</pluginArtifact>
           </configuration>
         </execution>
       </executions>
@@ -392,9 +390,9 @@ _Note that this only works on unix like system at the moment._
 Add the `grpc-kotlin-gen` plugin to the plugins section of `protobuf-gradle-plugin`
 
 ```gradle
-def protobufVersion = '3.7.1'
-def grpcVersion = '1.21.0'
-def grpcKotlinVersion = '0.1.1'
+def protobufVersion = '3.10.0'
+def grpcVersion = '1.25.0'
+def grpcKotlinVersion = '0.1.3'
 
 protobuf {
     protoc {
@@ -406,7 +404,7 @@ protobuf {
             artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
         }
         grpckotlin {
-            artifact = "io.rouz:grpc-kotlin-gen:${grpcKotlinVersion}:jdk8@jar"
+            artifact = "io.rouz:grpc-kotlin-gen:${grpcKotlinVersion}"
         }
     }
     generateProtoTasks {
@@ -418,13 +416,11 @@ protobuf {
 }
 ```
 
-_Note that this only works on unix like system at the moment._
-
 Add the kotlin dependencies
 
 ```gradle
-def kotlinVersion = '1.3.40'
-def kotlinCoroutinesVersion = '1.2.2'
+def kotlinVersion = '1.3.61'
+def kotlinCoroutinesVersion = '1.3.3'
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
@@ -586,7 +582,7 @@ call.close() //  don't forget to close the send channel
 [protoc]: https://www.xolstice.org/protobuf-maven-plugin/examples/protoc-plugin.html
 [`suspend`]: https://kotlinlang.org/docs/reference/coroutines-overview.html
 [coroutine primitives]: https://github.com/Kotlin/kotlinx.coroutines
-[core coroutine primitives]: https://github.com/Kotlin/kotlinx.coroutines/blob/master/core/kotlinx-coroutines-core/README.md
+[core coroutine primitives]: https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/
 [Exception handling]: https://kotlinlang.org/docs/reference/coroutines/exception-handling.html
 [`Channel`]: https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental.channels/-channel/index.html
 [`Deferred`]: https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental/-deferred/index.html
