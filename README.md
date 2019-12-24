@@ -290,7 +290,7 @@ Add the `grpc-kotlin-gen` plugin to your `protobuf-maven-plugin` configuration (
   <kotlinx-coroutines.version>1.3.3</kotlinx-coroutines.version>
   <grpc.version>1.25.0</grpc.version>
   <protobuf.version>3.10.0</protobuf.version>
-  <grpc-kotlin.version>0.1.3</grpc-kotlin.version>
+  <grpc-kotlin.version>0.1.4</grpc-kotlin.version>
 </properties>
 
 <dependencies>
@@ -392,7 +392,7 @@ Add the `grpc-kotlin-gen` plugin to the plugins section of `protobuf-gradle-plug
 ```gradle
 def protobufVersion = '3.10.0'
 def grpcVersion = '1.25.0'
-def grpcKotlinVersion = '0.1.3'
+def grpcKotlinVersion = '0.1.4'
 
 protobuf {
     protoc {
