@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.rouz</groupId>
         <artifactId>grpc-kotlin-parent</artifactId>
-        <version>0.1.4</version>
+        <version>0.1.5-SNAPSHOT</version>
     </parent>
 
     <name>grpc-kotlin-test</name>
