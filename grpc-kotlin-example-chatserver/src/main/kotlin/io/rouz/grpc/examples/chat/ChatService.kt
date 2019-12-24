@@ -2,7 +2,7 @@
  * -\-\-
  * simple-kotlin-standalone-example
  * --
- * Copyright (C) 2016 - 2018 rouz.io
+ * Copyright (C) 2016 - 2019 rouz.io
  * --
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,86 +24,120 @@ import com.google.protobuf.Empty
 import com.google.protobuf.Timestamp
 import io.grpc.Status
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.util.concurrent.ConcurrentSkipListMap
 
 @UseExperimental(ExperimentalCoroutinesApi::class)
 class ChatService : ChatServiceImplBase() {
-
-    data class Client(val name: String, val channel: SendChannel<ChatMessageFromService>)
-
-    private val clientChannels = LinkedHashSet<Client>()
+    private val clientChannels = ConcurrentSkipListMap<String, SendChannel<ChatMessageFromService>>()
 
     override suspend fun getNames(request: Empty): ChatRoom {
         return ChatRoom.newBuilder()
-            .addAllNames(clientChannels.map(Client::name))
-            .build()
+                .addAllNames(clientChannels.keys)
+                .build()
     }
 
-    override fun chat(requests: ReceiveChannel<ChatMessage>): ReceiveChannel<ChatMessageFromService> {
-        val channel = Channel<ChatMessageFromService>(Channel.UNLIMITED)
-        channel.invokeOnClose {
+    private fun createChannel() = Channel<ChatMessageFromService>(100).apply {
+        invokeOnClose {
             it?.printStackTrace()
         }
-        println("New client connection: $channel")
+    }
 
-        launch {
-            // wait for first message
-            val hello = requests.receive()
-            val name = hello.from
-            val client = Client(name, channel)
-            clientChannels.add(client)
+    private fun subscribe(name: String, ch: SendChannel<ChatMessageFromService>) {
+        println("New client connected: $name")
+        clientChannels.put(name, ch)
+                ?.apply {
+                    println("Close duplicate channel of user: $name")
+                    close()
+                }
+    }
 
-            try {
-                for (chatMessage in requests) {
-                    println("Got request from $requests:")
-                    println(chatMessage)
-                    val message = createMessage(chatMessage)
-                    clientChannels
-                        .filter { it.name != chatMessage.from }
-                        .forEach { other ->
-                            println("Sending to $other")
-                            other.channel.send(message)
+    private suspend fun broadcast(message: ChatMessage) = createMessage(message)
+            .let { broadcastMessage ->
+                println("Broadcast ${message.from}: ${message.message}")
+
+                clientChannels.asSequence()
+                        .filterNot { (name, _) -> name == message.from }
+                        .forEach { (other, ch) ->
+                            launch {
+                                try {
+                                    println("Sending to $other")
+                                    ch.send(broadcastMessage)
+                                } catch (e: Throwable) {
+                                    println("$other hung up: ${e.message}. Removing client channel")
+                                    clientChannels.remove(other)?.close(e)
+                                }
+                            }
                         }
-                }
-            } catch (t: Throwable) {
-                println("Threw $t")
-                if (Status.fromThrowable(t).code != Status.Code.CANCELLED) {
-                    println("An actual error occurred")
-                    t.printStackTrace()
-                }
-            } finally {
-                println("$name hung up. Removing client channel")
-                clientChannels.remove(client)
-                if (!channel.isClosedForSend) {
-                    channel.close()
+            }
+
+
+    override fun chat(requests: ReceiveChannel<ChatMessage>): ReceiveChannel<ChatMessageFromService> =
+            createChannel().also {
+                GlobalScope.launch {
+                    doChat(requests, it)
                 }
             }
-        }
 
-        return channel
+    private suspend fun doChat(req: ReceiveChannel<ChatMessage>, resp: SendChannel<ChatMessageFromService>) {
+        val hello = req.receive()
+        subscribe(hello.from, resp)
+        broadcast(hello)
+
+        try {
+            for (chatMessage in req) {
+                println("Got request from $req:")
+                println(chatMessage)
+                broadcast(chatMessage)
+            }
+        } catch (t: Throwable) {
+            println("Threw $t")
+            if (Status.fromThrowable(t).code != Status.Code.CANCELLED) {
+                println("An actual error occurred")
+                t.printStackTrace()
+            }
+        } finally {
+            println("${hello.from} hung up. Removing client channel")
+            clientChannels.remove(hello.from)
+            if (!resp.isClosedForSend) {
+                resp.close()
+            }
+        }
+    }
+
+    override suspend fun say(request: ChatMessage): Empty = Empty.getDefaultInstance().also {
+        broadcast(request)
+    }
+
+    override fun listen(request: WhoAmI): ReceiveChannel<ChatMessageFromService> = createChannel().also {
+        subscribe(request.name, it)
     }
 
     fun shutdown() {
         println("Shutting down Chat service")
-        clientChannels.stream().forEach { client ->
+        clientChannels.forEach { (client, channel) ->
             println("Closing client channel $client")
-            client.channel.close()
+            channel.close()
         }
         clientChannels.clear()
     }
 
-    private fun createMessage(request: ChatMessage): ChatMessageFromService {
-        return ChatMessageFromService.newBuilder()
-            .setTimestamp(
-                Timestamp.newBuilder()
-                    .setSeconds(System.nanoTime() / 1000000000)
-                    .setNanos((System.nanoTime() % 1000000000).toInt())
-                    .build()
-            )
-            .setMessage(request)
-            .build()
-    }
+    private fun createMessage(request: ChatMessage) = ChatMessageFromService.newBuilder()
+            .run {
+                timestamp = Instant.now().run {
+                    Timestamp.newBuilder().run {
+                        seconds = epochSecond
+                        nanos = nano
+                        build()
+                    }
+                }
+                message = request
+                build()
+            }
+
 }

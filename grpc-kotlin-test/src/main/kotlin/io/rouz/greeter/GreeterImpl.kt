@@ -33,11 +33,11 @@ import java.util.concurrent.Executors.newFixedThreadPool
  * Implementation of coroutine-based gRPC service defined in greeter.proto
  */
 @UseExperimental(ExperimentalCoroutinesApi::class)
-class GreeterImpl : GreeterImplBase(
+open class GreeterImpl : GreeterImplBase(
     coroutineContext = newFixedThreadPool(4, threadFactory("server-worker-%d")).asCoroutineDispatcher()
 ) {
 
-    private val log = KotlinLogging.logger("server")
+    protected val log = KotlinLogging.logger("server")
 
     override suspend fun greet(request: GreetRequest): GreetReply {
         log.info(request.greeting)

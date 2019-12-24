@@ -63,7 +63,12 @@ abstract class {{serviceName}}ImplBase(
             tryCatchingStatus(responseObserver) {
                 val responses = {{methodName}}(request)
                 for (response in responses) {
-                  onNext(response)
+                    try {
+                        onNext(response)
+                    } catch (e: Throwable) {
+                        responses.cancel()
+                        throw e
+                    }
                 }
             }
         }
@@ -104,7 +109,12 @@ abstract class {{serviceName}}ImplBase(
             tryCatchingStatus(responseObserver) {
                 val responses = {{methodName}}(requests)
                 for (response in responses) {
-                    onNext(response)
+                    try {
+                        onNext(response)
+                    } catch (e: Throwable) {
+                        responses.cancel()
+                        throw e
+                    }
                 }
             }
         }

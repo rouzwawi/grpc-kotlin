@@ -24,5 +24,6 @@ fun main(args: Array<String>) {
     when(args[0]) {
         "server" -> grpcServer()
         "client" -> chatClient()
+        "clientSS" -> serverStreamingChatClient()
     }
 }
