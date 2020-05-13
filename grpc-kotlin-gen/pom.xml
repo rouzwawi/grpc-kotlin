@@ -12,7 +12,9 @@
     <packaging>jar</packaging>
 
     <name>grpc-kotlin-gen</name>
-
+    <properties>
+        <grpc.version>1.25.0</grpc.version>
+    </properties>
     <dependencies>
         <!-- scope : compile -->
         <dependency>
@@ -20,7 +22,11 @@
             <artifactId>jprotoc</artifactId>
             <version>0.9.1</version>
         </dependency>
-
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-protobuf</artifactId>
+            <version>${grpc.version}</version>
+        </dependency>
         <!-- scope : test -->
     </dependencies>
 
